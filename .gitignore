@@ -1,0 +1,23 @@
+# Local and generated state. Do not commit credentials or project data.
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+__pycache__/
+*.py[cod]
+.pytest_cache/
+node_modules/
+dist/
+build/
+coverage/
+.playwright/
+test-results/
+*.iastudio
+*.sqlite
+*.sqlite3
+*.db
+.DS_Store
+*.log
