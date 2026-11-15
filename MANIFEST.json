@@ -1,0 +1,74 @@
+{
+  "bundle": "Infinite Studio - The Futures Table",
+  "created": "2026-11-15",
+  "files": {
+    "index.html": {
+      "bytes": 206126,
+      "sha256": "e632529fa866ccd318386c07ecc2eace449132a51d628cf4ba95209aa4649722"
+    },
+    "server.py": {
+      "bytes": 8524,
+      "sha256": "5f4b2796c44bffd7a979a4d7a111f7dbb2c68abea0df9a9a11a3665cf93a32db"
+    },
+    "original_source.html": {
+      "bytes": 114419,
+      "sha256": "0e1497037505c011d7837874f5a277c5b65cc030161e36fc33102218f9970b76"
+    },
+    "laboratory.js": {
+      "bytes": 24268,
+      "sha256": "4ee7a2fd3940bbdad2395459ab2cfe6939d571e9f86b01278fcfaece2118150b"
+    },
+    "laboratory.css": {
+      "bytes": 6128,
+      "sha256": "f4342e999a697b69a00d678f04f8a7df89e27b1b0585a8c4870a3c3c7f0201c9"
+    },
+    "laboratory.ui.html": {
+      "bytes": 4512,
+      "sha256": "1404d4de0cc76436c694075070ce3442d2a12aa86e646b24b70fdfd6c0fa7ba5"
+    },
+    "build.py": {
+      "bytes": 7270,
+      "sha256": "f5251d65ed8a43ee99b2ec1254b918833da94b161d96389e93ec44bdd9f44287"
+    },
+    "README.md": {
+      "bytes": 6598,
+      "sha256": "b8c2762e8d6b5b32118964bf91ea7f5efcdf3c1e2d51d7f24bf29fc2ac9f506f"
+    },
+    "AWE_BRIEF.md": {
+      "bytes": 6487,
+      "sha256": "206c4138fc5b52c5eb80f5b84be07313497aaebad405e2e894c681c6b501ffb5"
+    },
+    "QA_REPORT.md": {
+      "bytes": 3864,
+      "sha256": "0d540a6be5a37abd89043c7aaafe8785ad7b6d01dfcb23065abc3fee1e9ac5a4"
+    },
+    "tests/test_backend.py": {
+      "bytes": 4843,
+      "sha256": "629b439e8a7dbaab4416cc823f7c5184b978cb6b6dba5e2c6dda457aaf983129"
+    },
+    "tests/run_browser_smoke.py": {
+      "bytes": 4497,
+      "sha256": "12591d9c704d43a2cb52720ccb7356937eca602a8bf7ef15ff448d999a0075c9"
+    },
+    "tests/run_extra_browser_checks.py": {
+      "bytes": 2157,
+      "sha256": "d8599ddf07e5b7244e426580091095b70fcf105b44cf6961921a25f5793a54bb"
+    },
+    "studio_home.png": {
+      "bytes": 71423,
+      "sha256": "b663b1fdaa1ca60ccfe4bf3c82c516280fef7e9fe3d2aa90a1ac6bc726f6efe1"
+    },
+    "studio_futures.png": {
+      "bytes": 157045,
+      "sha256": "28a92652573a7d3bf8588f628c1cb259db1973fe133b9fe59484471c6173e9b0"
+    },
+    "studio_tablet_portrait.png": {
+      "bytes": 132944,
+      "sha256": "1eae22f77460ccdf2eeb05843f4f58b5661f5f21f0019f72494dd85dec873eb7"
+    },
+    "studio_phone_preview.png": {
+      "bytes": 65014,
+      "sha256": "f7877e4eab8fcbcb5d0eac908f20ba4fa4d407a85d930f3551f9ffdb3b1472a4"
+    }
+  }
+}
