@@ -591,7 +591,13 @@ object TimeAndRecipeEngine {
     fun computeInvalidatedNodeIds(doc: CanonicalDocument, recipeId: String): Set<String> {
         val graph = doc.recipes.find { it.id == recipeId } ?: return emptySet()
         val ordered = topologicalSort(graph).getOrNull() ?: return graph.nodes.map { it.id }.toSet()
-        val baseHash = doc.documentContentHash().take(16)
+        // Predict exactly the same source fingerprint as executeRecipeGraph; a
+        // metadata-only document hash invalidated every node after the real-pixel upgrade.
+        val source = doc.layers.find { it.id == doc.activeLayerId && !it.id.startsWith("recipe_output_") }
+            ?: doc.layers.firstOrNull { it.tiles.isNotEmpty() && !it.id.startsWith("recipe_output_") }
+        val baseHash = sha256Short(
+            "${doc.documentId}:${source?.id}:${source?.pixelContentHash()}:${source?.transform}"
+        )
         val predictedKeys = LinkedHashMap<String, String>()
         val invalidated = LinkedHashSet<String>()
         for (node in ordered) {
