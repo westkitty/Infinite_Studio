@@ -1,5 +1,17 @@
 # Operational State - Infinite Studio
 
+## Current operational checkpoint — 2026-11-16, revision 2
+
+- Repository: `westkitty/Infinite_Studio`; protected working branch `reconcile/restore-original-and-native` with all ten historical source files restored and native Android implementation intact. `main` remains at `db230c8` and has not been modified by these repairs.
+- Native Android source repairs: G03 provisional drawing/eraser previews correctly world-aligned and bounded; F04 Creative Recipes actually perform deterministic sparse-tile image operations and commit editable outputs without overwriting originals.
+- Verified evidence: [GitHub Actions 43820160709](https://github.com/westkitty/Infinite_Studio/actions/runs/43820160709) — 37 Android tests, debug APK build and 3 companion tests passed. Five engine regression tests are present. No device-specific S-Pen claims; original RC2 artifact is pre-repair.
+- Authoritative native build contract: `docs/GOOGLE_AI_STUDIO_NATIVE_FULL_BUILD_CONTRACT_v3.md`. Protected source hash: `original_source.html` SHA-256 `0e1497037505c011d7837874f5a277c5b65cc030161e36fc33102218f9970b76`.
+- Outstanding: real tablet/SDK runtime UX and performance, file pickers, hardware MP4, external companion transport and broader large-canvas resilience. Do not publish, enable paid APIs or merge into main without separate approval.
+
+---
+
+## Historical bootstrap state (2026-11-15; superseded for current planning)
+
 Project ID: westkitty/Infinite_Studio
 State revision: 1
 Date: 2026-11-15

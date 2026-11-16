@@ -7,7 +7,7 @@
     "repository": "https://github.com/westkitty/Infinite_Studio",
     "commit": "242534065f7035f57a44bb400cb30bc2cd74387d",
     "protectedOriginalSha256": "0e1497037505c011d7837874f5a277c5b65cc030161e36fc33102218f9970b76",
-    "note": "Web baseline files preserved upstream on GitHub main; baseline native RC archive (Infinite_Studio_Native_Android_RC.zip, sha256 94b0a22368e7401c7425c83bac33162de19fe3287016660934b53cc2fe70808d) preserved untouched."
+    "note": "Web baseline files deleted from GitHub main in db230c8 and restored byte-for-byte on reconcile/restore-original-and-native in 32c6db3; baseline native RC archive (Infinite_Studio_Native_Android_RC.zip, sha256 94b0a22368e7401c7425c83bac33162de19fe3287016660934b53cc2fe70808d) preserved untouched."
   },
   "toolchain": {
     "agp": "9.1.1",
@@ -35,101 +35,498 @@
     "liveRemoteOpenAiInference": "NOT_EXECUTED (disabled by default; zero paid calls; zero keys in Android client)"
   },
   "entries": [
-    { "path": "build.gradle.kts", "role": "build-config", "origin": "generated-android" },
-    { "path": "settings.gradle.kts", "role": "build-config", "origin": "generated-android" },
-    { "path": "gradle.properties", "role": "gradle-properties", "origin": "platform-config" },
-    { "path": "gradle/libs.versions.toml", "role": "dependency-catalog", "origin": "generated-android" },
-    { "path": ".gitignore", "role": "git-ignore", "origin": "generated-android" },
-    { "path": "metadata.json", "role": "aistudio-metadata", "origin": "platform-config" },
-    { "path": "app/build.gradle.kts", "role": "module-build-config", "origin": "generated-android" },
-    { "path": "app/proguard-rules.pro", "role": "proguard-rules", "origin": "generated-android" },
-    { "path": "app/src/main/AndroidManifest.xml", "role": "android-manifest", "origin": "generated-android" },
-    { "path": "app/src/main/res/drawable/ic_launcher_background.xml", "role": "adaptive-icon-background", "origin": "generated-android" },
-    { "path": "app/src/main/res/drawable/ic_launcher_foreground.xml", "role": "adaptive-icon-foreground", "origin": "generated-android" },
-    { "path": "app/src/main/res/drawable/ic_studio_launcher_1794797719546.jpg", "role": "launcher-artwork", "origin": "generated-image" },
-    { "path": "app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml", "role": "adaptive-launcher-xml", "origin": "generated-android" },
-    { "path": "app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml", "role": "adaptive-launcher-round-xml", "origin": "generated-android" },
-    { "path": "app/src/main/res/mipmap-hdpi/ic_launcher.png", "role": "legacy-launcher-hdpi", "origin": "generated-android" },
-    { "path": "app/src/main/res/mipmap-hdpi/ic_launcher_round.png", "role": "legacy-launcher-hdpi-round", "origin": "generated-android" },
-    { "path": "app/src/main/res/mipmap-mdpi/ic_launcher.png", "role": "legacy-launcher-mdpi", "origin": "generated-android" },
-    { "path": "app/src/main/res/mipmap-mdpi/ic_launcher_round.png", "role": "legacy-launcher-mdpi-round", "origin": "generated-android" },
-    { "path": "app/src/main/res/mipmap-xhdpi/ic_launcher.png", "role": "legacy-launcher-xhdpi", "origin": "generated-android" },
-    { "path": "app/src/main/res/mipmap-xhdpi/ic_launcher_round.png", "role": "legacy-launcher-xhdpi-round", "origin": "generated-android" },
-    { "path": "app/src/main/res/mipmap-xxhdpi/ic_launcher.png", "role": "legacy-launcher-xxhdpi", "origin": "generated-android" },
-    { "path": "app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png", "role": "legacy-launcher-xxhdpi-round", "origin": "generated-android" },
-    { "path": "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png", "role": "legacy-launcher-xxxhdpi", "origin": "generated-android" },
-    { "path": "app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png", "role": "legacy-launcher-xxxhdpi-round", "origin": "generated-android" },
-    { "path": "app/src/main/res/values/strings.xml", "role": "android-strings", "origin": "generated-android" },
-    { "path": "app/src/main/res/values/themes.xml", "role": "android-theme", "origin": "generated-android" },
-    { "path": "app/src/main/res/xml/file_paths.xml", "role": "fileprovider-paths", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/MainActivity.kt", "role": "activity-compose-root", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/document/DocumentModels.kt", "role": "canonical-v3-schema", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/document/TransactionEngine.kt", "role": "undo-redo-transactions", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/document/DocumentArchiveCodec.kt", "role": "iastudio-v3-codec-v2-migration", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/document/SampleProjectFactory.kt", "role": "offline-sample-and-living-workshop-journeys", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/input/StylusInputRouter.kt", "role": "stylus-motion-event-router", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/render/SparseTileRenderer.kt", "role": "sparse-256px-tile-renderer-and-telemetry", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/tools/TileBrushEngine.kt", "role": "brush-fill-symmetry-engine", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/features/FuturesAndConstraintsEngine.kt", "role": "p01-p02-p03-p06-f07-engine", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/features/ObjectSurgeryAndMaterialEngine.kt", "role": "f01-f02-f06-engine", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/features/VectorAndFoundryEngine.kt", "role": "f08-f09-p09-engine", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/features/TimeAndRecipeEngine.kt", "role": "f03-f04-f05-engine", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/features/VaultBranchOrchardEngine.kt", "role": "f10-p04-p05-p07-p08-engine", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/services/ProviderRouter.kt", "role": "p10-secure-provider-router", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/storage/ProjectStorageManager.kt", "role": "atomic-drafts-saf-photopicker", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/model/StudioModels.kt", "role": "ui-state-and-workspace-mode-models", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/viewmodel/StudioViewModel.kt", "role": "mvvm-coordinator", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/ui/canvas/InfiniteCanvasView.kt", "role": "native-stylus-canvas-and-direct-gizmos", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/ui/components/TopControlBar.kt", "role": "ui-top-bar-and-workspace-modes", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/ui/components/LeftBrushDock.kt", "role": "ui-brush-rail", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/ui/components/BottomToolDock.kt", "role": "ui-tool-transform-vector-animate-docks", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/ui/components/LayersDrawer.kt", "role": "ui-layers-drawer", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/ui/components/ColorStudioPopover.kt", "role": "ui-color-studio", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/ui/components/CheckerboardBox.kt", "role": "ui-cached-shaderbrush-checkerboard", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/ui/components/FuturesTableDialog.kt", "role": "ui-futures-table", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/ui/components/FuturesLoomDialog.kt", "role": "ui-futures-loom-and-branch-compare", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/ui/components/CreativeCommandRing.kt", "role": "ui-8-slot-spen-command-ring", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/ui/components/RecipeGraphEditor.kt", "role": "ui-f04-visual-dag-editor", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/ui/components/BrushStudioDialog.kt", "role": "ui-brush-studio", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/ui/components/StudioWorkspaceSheet.kt", "role": "ui-20-system-hub", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/ui/components/StudioWorkspaceTabsExt.kt", "role": "ui-hub-tabs-2-4-5", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/ui/components/DiagnosticsDialog.kt", "role": "ui-redacted-diagnostics", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/ui/components/ProjectVaultDialog.kt", "role": "ui-project-vault", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/ui/components/ExportDialog.kt", "role": "ui-export-modal", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/ui/theme/Color.kt", "role": "m3-color-tokens", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/ui/theme/Theme.kt", "role": "m3-theme", "origin": "generated-android" },
-    { "path": "app/src/main/java/com/example/ui/theme/Type.kt", "role": "m3-typography", "origin": "generated-android" },
-    { "path": "app/src/main/res/font/inter.ttf", "role": "bundled-font-ofl", "origin": "font-util" },
-    { "path": "app/src/main/res/font/jetbrains_mono.ttf", "role": "bundled-font-ofl", "origin": "font-util" },
-    { "path": "app/src/test/java/com/example/DocumentAndArchiveTests.kt", "role": "test-document-archive", "origin": "generated-android" },
-    { "path": "app/src/test/java/com/example/StylusAndTileRendererTests.kt", "role": "test-stylus-tiles", "origin": "generated-android" },
-    { "path": "app/src/test/java/com/example/EndToEndJourneysTest.kt", "role": "test-journeys-j01-j08", "origin": "generated-android" },
-    { "path": "app/src/test/java/com/example/ProviderAndBranchesTest.kt", "role": "test-j07-branches", "origin": "generated-android" },
-    { "path": "app/src/test/java/com/example/WorkspaceAdvancedSystemsTest.kt", "role": "test-f02-f03-p04-p08-p09-p10", "origin": "generated-android" },
-    { "path": "app/src/test/java/com/example/UiFlowsRobolectricTest.kt", "role": "test-compose-ui-cuj", "origin": "generated-android" },
-    { "path": "app/src/test/java/com/example/CredentialBoundaryAndBuildArtifactTest.kt", "role": "test-credential-boundary-and-apk-scan", "origin": "generated-android" },
-    { "path": "app/src/test/java/com/example/LivingWorkshopTest.kt", "role": "test-living-workshop-stages-b-through-f", "origin": "generated-android" },
-    { "path": "companion/server.py", "role": "loopback-companion-service", "origin": "generated-companion" },
-    { "path": "companion/test_companion.py", "role": "companion-unit-tests", "origin": "generated-companion" },
-    { "path": "companion/README.md", "role": "companion-docs", "origin": "generated-companion" },
-    { "path": "companion/.env.example", "role": "companion-env-template", "origin": "generated-companion" },
-    { "path": "schema/openapi.json", "role": "openapi-3.0.3-contract", "origin": "generated-schema" },
-    { "path": "schema/iastudio-v3.schema.json", "role": "manifest-json-schema", "origin": "generated-schema" },
-    { "path": "schema/sample-manifest.json", "role": "deterministic-manifest-fixture", "origin": "generated-schema" },
-    { "path": "schema/sample-job-request.json", "role": "deterministic-job-request-fixture", "origin": "generated-schema" },
-    { "path": "schema/sample-job-response.json", "role": "deterministic-job-response-fixture", "origin": "generated-schema" },
-    { "path": "README.md", "role": "project-documentation", "origin": "generated-doc" },
-    { "path": "ARCHITECTURE.md", "role": "architecture-documentation", "origin": "generated-doc" },
-    { "path": "DOCUMENT_FORMAT.md", "role": "format-specification", "origin": "generated-doc" },
-    { "path": "BACKEND_CONTRACT.md", "role": "backend-specification", "origin": "generated-doc" },
-    { "path": "BUILD_STATUS.md", "role": "20-system-status-ledger", "origin": "generated-doc" },
-    { "path": "REQUIREMENT_TRACEABILITY.md", "role": "requirement-traceability", "origin": "generated-doc" },
-    { "path": "QA_EVIDENCE.md", "role": "executed-test-evidence", "origin": "generated-doc" },
-    { "path": "TAB_S9_ULTRA_DEVICE_QA.md", "role": "physical-device-qa-script", "origin": "generated-doc" },
-    { "path": "SECURITY_PRIVACY.md", "role": "security-privacy-policy", "origin": "generated-doc" },
-    { "path": "DEPENDENCIES_LICENSES.md", "role": "dependency-license-ledger", "origin": "generated-doc" },
-    { "path": "REPAIR_QUEUE.md", "role": "ranked-repair-queue", "origin": "generated-doc" },
-    { "path": "HANDOFF_FOR_CHATGPT.md", "role": "independent-audit-handoff", "origin": "generated-doc" },
-    { "path": "SOURCE_MANIFEST.json", "role": "workspace-inventory", "origin": "generated-doc" }
-  ]
+    {
+      "path": "build.gradle.kts",
+      "role": "build-config",
+      "origin": "generated-android"
+    },
+    {
+      "path": "settings.gradle.kts",
+      "role": "build-config",
+      "origin": "generated-android"
+    },
+    {
+      "path": "gradle.properties",
+      "role": "gradle-properties",
+      "origin": "platform-config"
+    },
+    {
+      "path": "gradle/libs.versions.toml",
+      "role": "dependency-catalog",
+      "origin": "generated-android"
+    },
+    {
+      "path": ".gitignore",
+      "role": "git-ignore",
+      "origin": "generated-android"
+    },
+    {
+      "path": "metadata.json",
+      "role": "aistudio-metadata",
+      "origin": "platform-config"
+    },
+    {
+      "path": "app/build.gradle.kts",
+      "role": "module-build-config",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/proguard-rules.pro",
+      "role": "proguard-rules",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/AndroidManifest.xml",
+      "role": "android-manifest",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/res/drawable/ic_launcher_background.xml",
+      "role": "adaptive-icon-background",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/res/drawable/ic_launcher_foreground.xml",
+      "role": "adaptive-icon-foreground",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/res/drawable/ic_studio_launcher_1794797719546.jpg",
+      "role": "launcher-artwork",
+      "origin": "generated-image"
+    },
+    {
+      "path": "app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
+      "role": "adaptive-launcher-xml",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml",
+      "role": "adaptive-launcher-round-xml",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/res/mipmap-hdpi/ic_launcher.png",
+      "role": "legacy-launcher-hdpi",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/res/mipmap-hdpi/ic_launcher_round.png",
+      "role": "legacy-launcher-hdpi-round",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/res/mipmap-mdpi/ic_launcher.png",
+      "role": "legacy-launcher-mdpi",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/res/mipmap-mdpi/ic_launcher_round.png",
+      "role": "legacy-launcher-mdpi-round",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xhdpi/ic_launcher.png",
+      "role": "legacy-launcher-xhdpi",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xhdpi/ic_launcher_round.png",
+      "role": "legacy-launcher-xhdpi-round",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+      "role": "legacy-launcher-xxhdpi",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png",
+      "role": "legacy-launcher-xxhdpi-round",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "role": "legacy-launcher-xxxhdpi",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png",
+      "role": "legacy-launcher-xxxhdpi-round",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/res/values/strings.xml",
+      "role": "android-strings",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/res/values/themes.xml",
+      "role": "android-theme",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/res/xml/file_paths.xml",
+      "role": "fileprovider-paths",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/MainActivity.kt",
+      "role": "activity-compose-root",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/document/DocumentModels.kt",
+      "role": "canonical-v3-schema",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/document/TransactionEngine.kt",
+      "role": "undo-redo-transactions",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/document/DocumentArchiveCodec.kt",
+      "role": "iastudio-v3-codec-v2-migration",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/document/SampleProjectFactory.kt",
+      "role": "offline-sample-and-living-workshop-journeys",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/input/StylusInputRouter.kt",
+      "role": "stylus-motion-event-router",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/render/SparseTileRenderer.kt",
+      "role": "sparse-256px-tile-renderer-and-telemetry",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/tools/TileBrushEngine.kt",
+      "role": "brush-fill-symmetry-engine",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/features/FuturesAndConstraintsEngine.kt",
+      "role": "p01-p02-p03-p06-f07-engine",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/features/ObjectSurgeryAndMaterialEngine.kt",
+      "role": "f01-f02-f06-engine",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/features/VectorAndFoundryEngine.kt",
+      "role": "f08-f09-p09-engine",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/features/TimeAndRecipeEngine.kt",
+      "role": "f03-f04-f05-engine",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/features/VaultBranchOrchardEngine.kt",
+      "role": "f10-p04-p05-p07-p08-engine",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/services/ProviderRouter.kt",
+      "role": "p10-secure-provider-router",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/storage/ProjectStorageManager.kt",
+      "role": "atomic-drafts-saf-photopicker",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/model/StudioModels.kt",
+      "role": "ui-state-and-workspace-mode-models",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/viewmodel/StudioViewModel.kt",
+      "role": "mvvm-coordinator",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/canvas/InfiniteCanvasView.kt",
+      "role": "native-stylus-canvas-and-direct-gizmos",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/TopControlBar.kt",
+      "role": "ui-top-bar-and-workspace-modes",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/LeftBrushDock.kt",
+      "role": "ui-brush-rail",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/BottomToolDock.kt",
+      "role": "ui-tool-transform-vector-animate-docks",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/LayersDrawer.kt",
+      "role": "ui-layers-drawer",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/ColorStudioPopover.kt",
+      "role": "ui-color-studio",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/CheckerboardBox.kt",
+      "role": "ui-cached-shaderbrush-checkerboard",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/FuturesTableDialog.kt",
+      "role": "ui-futures-table",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/FuturesLoomDialog.kt",
+      "role": "ui-futures-loom-and-branch-compare",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/CreativeCommandRing.kt",
+      "role": "ui-8-slot-spen-command-ring",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/RecipeGraphEditor.kt",
+      "role": "ui-f04-visual-dag-editor",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/BrushStudioDialog.kt",
+      "role": "ui-brush-studio",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/StudioWorkspaceSheet.kt",
+      "role": "ui-20-system-hub",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/StudioWorkspaceTabsExt.kt",
+      "role": "ui-hub-tabs-2-4-5",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/DiagnosticsDialog.kt",
+      "role": "ui-redacted-diagnostics",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/ProjectVaultDialog.kt",
+      "role": "ui-project-vault",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/ExportDialog.kt",
+      "role": "ui-export-modal",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/theme/Color.kt",
+      "role": "m3-color-tokens",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/theme/Theme.kt",
+      "role": "m3-theme",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/theme/Type.kt",
+      "role": "m3-typography",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/main/res/font/inter.ttf",
+      "role": "bundled-font-ofl",
+      "origin": "font-util"
+    },
+    {
+      "path": "app/src/main/res/font/jetbrains_mono.ttf",
+      "role": "bundled-font-ofl",
+      "origin": "font-util"
+    },
+    {
+      "path": "app/src/test/java/com/example/DocumentAndArchiveTests.kt",
+      "role": "test-document-archive",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/test/java/com/example/StylusAndTileRendererTests.kt",
+      "role": "test-stylus-tiles",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/test/java/com/example/EndToEndJourneysTest.kt",
+      "role": "test-journeys-j01-j08",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/test/java/com/example/ProviderAndBranchesTest.kt",
+      "role": "test-j07-branches",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/test/java/com/example/WorkspaceAdvancedSystemsTest.kt",
+      "role": "test-f02-f03-p04-p08-p09-p10",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/test/java/com/example/UiFlowsRobolectricTest.kt",
+      "role": "test-compose-ui-cuj",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/test/java/com/example/CredentialBoundaryAndBuildArtifactTest.kt",
+      "role": "test-credential-boundary-and-apk-scan",
+      "origin": "generated-android"
+    },
+    {
+      "path": "app/src/test/java/com/example/LivingWorkshopTest.kt",
+      "role": "test-living-workshop-stages-b-through-f",
+      "origin": "generated-android"
+    },
+    {
+      "path": "companion/server.py",
+      "role": "loopback-companion-service",
+      "origin": "generated-companion"
+    },
+    {
+      "path": "companion/test_companion.py",
+      "role": "companion-unit-tests",
+      "origin": "generated-companion"
+    },
+    {
+      "path": "companion/README.md",
+      "role": "companion-docs",
+      "origin": "generated-companion"
+    },
+    {
+      "path": "companion/.env.example",
+      "role": "companion-env-template",
+      "origin": "generated-companion"
+    },
+    {
+      "path": "schema/openapi.json",
+      "role": "openapi-3.0.3-contract",
+      "origin": "generated-schema"
+    },
+    {
+      "path": "schema/iastudio-v3.schema.json",
+      "role": "manifest-json-schema",
+      "origin": "generated-schema"
+    },
+    {
+      "path": "schema/sample-manifest.json",
+      "role": "deterministic-manifest-fixture",
+      "origin": "generated-schema"
+    },
+    {
+      "path": "schema/sample-job-request.json",
+      "role": "deterministic-job-request-fixture",
+      "origin": "generated-schema"
+    },
+    {
+      "path": "schema/sample-job-response.json",
+      "role": "deterministic-job-response-fixture",
+      "origin": "generated-schema"
+    },
+    {
+      "path": "README.md",
+      "role": "project-documentation",
+      "origin": "generated-doc"
+    },
+    {
+      "path": "ARCHITECTURE.md",
+      "role": "architecture-documentation",
+      "origin": "generated-doc"
+    },
+    {
+      "path": "DOCUMENT_FORMAT.md",
+      "role": "format-specification",
+      "origin": "generated-doc"
+    },
+    {
+      "path": "BACKEND_CONTRACT.md",
+      "role": "backend-specification",
+      "origin": "generated-doc"
+    },
+    {
+      "path": "BUILD_STATUS.md",
+      "role": "20-system-status-ledger",
+      "origin": "generated-doc"
+    },
+    {
+      "path": "REQUIREMENT_TRACEABILITY.md",
+      "role": "requirement-traceability",
+      "origin": "generated-doc"
+    },
+    {
+      "path": "QA_EVIDENCE.md",
+      "role": "executed-test-evidence",
+      "origin": "generated-doc"
+    },
+    {
+      "path": "TAB_S9_ULTRA_DEVICE_QA.md",
+      "role": "physical-device-qa-script",
+      "origin": "generated-doc"
+    },
+    {
+      "path": "SECURITY_PRIVACY.md",
+      "role": "security-privacy-policy",
+      "origin": "generated-doc"
+    },
+    {
+      "path": "DEPENDENCIES_LICENSES.md",
+      "role": "dependency-license-ledger",
+      "origin": "generated-doc"
+    },
+    {
+      "path": "REPAIR_QUEUE.md",
+      "role": "ranked-repair-queue",
+      "origin": "generated-doc"
+    },
+    {
+      "path": "HANDOFF_FOR_CHATGPT.md",
+      "role": "independent-audit-handoff",
+      "origin": "generated-doc"
+    },
+    {
+      "path": "SOURCE_MANIFEST.json",
+      "role": "workspace-inventory",
+      "origin": "generated-doc"
+    }
+  ],
+  "recoveryBranch": {
+    "name": "reconcile/restore-original-and-native",
+    "sourceRepairCommit": "3d8420194801b163c6cddb6a9575ae8ced98016c",
+    "qaRun": "https://github.com/westkitty/Infinite_Studio/actions/runs/43820160709",
+    "validation": "37 Android tests and APK build passed; 3 companion tests passed",
+    "branchOnlyAddedFiles": [
+      "app/src/main/java/com/example/features/RecipePixelKernels.kt",
+      "app/src/main/java/com/example/features/RecipePixelOperators.kt",
+      "app/src/test/java/com/example/EngineRepairRegressionTest.kt",
+      ".github/workflows/android-engine-repair.yml"
+    ],
+    "scopeNote": "The original entries[] represent historical RC2 source archives and do not list this recovery branch's additional source files or restored browser baseline. The old ZIP is unmodified."
+  }
 }

@@ -26,7 +26,7 @@ Native Kotlin + Jetpack Compose + Material 3 creative studio engineered for **Sa
 # Compile debug APK cleanly (always use system gradle; do not use ./gradlew)
 gradle assembleDebug
 
-# Execute local Robolectric SDK 35 + Native Graphics unit, UI, & credential-boundary suite (26/26)
+# Execute local Robolectric SDK 35 + Native Graphics unit, UI, & credential-boundary suite (37/37)
 gradle :app:testDebugUnitTest
 ```
 
@@ -45,4 +45,9 @@ Binds strictly to `127.0.0.1:8787` in `MOCK_DETERMINISTIC` mode by default. All 
 ## Known Environment & Scope Limitations
 - **Physical Tab S9 Ultra Hardware & Interactive Emulator `framestats`:** Real Wacom EMR pressure curves, air hover, resting-palm ergonomics, and 120 Hz frame pacing (`dumpsys gfxinfo framestats`) could not be executed in the AI Studio cloud build sandbox (which exposes no ADB shell or interactive device control; `TAB_S9_ULTRA_DEVICE_QA.md` marks `D01`–`D09` as `NOT_RUN_NO_DEVICE`).
 - **Paid Cloud Inference:** `ProviderMode.OFFLINE_LOCAL_ONLY` is the default, and `OPENAI_API_KEY` has been completely eliminated from the Android client. External provider workflows are verified offline through `OfflineMockProviderAdapter`, JVM loopback socket tests, and `companion/test_companion.py`.
-- **Launcher / Repository Notes:** This workspace contains the rewritten single-module native Android project, companion service (`companion/`), schemas/fixtures (`schema/`), and contract documentation. Upstream web baseline `original_source.html` remains preserved on GitHub `main` (`westkitty/Infinite_Studio`).
+- **Launcher / Repository Notes:** This workspace contains the rewritten single-module native Android project, companion service (`companion/`), schemas/fixtures (`schema/`), and contract documentation. Original browser baseline `original_source.html` was removed from `main` in the native migration but restored byte-for-byte on protected branch `reconcile/restore-original-and-native`.
+
+
+## Current engine-repair branch (2026-11-16)
+
+[37 Android tests and 3 Python companion tests passed in GitHub Actions](https://github.com/westkitty/Infinite_Studio/actions/runs/43820160709) after the world-aligned provisional stroke/eraser repair and real local Creative Recipes pixel operations. These improvements are on `reconcile/restore-original-and-native`, not in the historical RC2 ZIP or the default `main` branch. The cloud-produced debug APK was not uploaded. Physical S-Pen behavior remains unverified.
