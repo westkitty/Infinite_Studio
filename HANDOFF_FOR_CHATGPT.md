@@ -58,3 +58,16 @@ The AI Studio cloud build sandbox has **no ADB bridge and no interactive emulato
 1. Extract `Infinite_Studio_Native_Android_Uplift_RC2.zip` into a clean directory, verify the 96 entries against `SOURCE_MANIFEST.json`, confirm zero `.env*` or secrets, and run `gradle :app:testDebugUnitTest assembleDebug` (`32/32`) plus `python3 -m unittest discover -s companion -p "test_*.py" -v` (`3/3`).
 2. Inspect `LivingWorkshopTest.kt`, `EndToEndJourneysTest.kt`, `UiFlowsRobolectricTest.kt`, and `CredentialBoundaryAndBuildArtifactTest.kt`.
 3. Install `app/build/outputs/apk/debug/app-debug.apk` on a physical Samsung Galaxy Tab S9 Ultra and execute `TAB_S9_ULTRA_DEVICE_QA.md` (`D01`–`D09`) with `dumpsys gfxinfo framestats`.
+
+
+---
+
+## 4. 2026-11-16 source-repair continuation (supersedes native RC2 checkpoint)
+
+**Current branch:** `reconcile/restore-original-and-native` at source commit `3d8420194801b163c6cddb6a9575ae8ced98016c` (prior restoration `32c6db3`). Do not target `main` and do not assume the original RC2 ZIP contains these later changes. Original browser source is restored byte-for-byte on the recovery branch, not main.
+
+**Engine changes:** input-event world-space provisional raster and non-destructive eraser preview in `InfiniteCanvasView.kt`; F04 deterministic sparse-tile operations in `RecipePixelKernels.kt` and `RecipePixelOperators.kt`; cancellable job and revision-aware non-destructive layer acceptance through `TimeAndRecipeEngine` and `StudioViewModel`. New source tests: `EngineRepairRegressionTest.kt` (five tests).
+
+**Independent evidence:** [CI 43820160709](https://github.com/westkitty/Infinite_Studio/actions/runs/43820160709) SUCCESS — Kotlin compilation + 37 Android Robolectric/JVM tests + debug APK compilation + 3 companion tests. Initial run `43819610050` failed 1/37 on the new cache fingerprint; fixed in `3d84201` and rerun green. CI APK was not uploaded, and no physical Tab S9 Ultra or real S-Pen test was executed. Big Mac did run 3/3 Python companion tests; restored browser tests were blocked locally by missing Pillow.
+
+**Remaining engineering:** hardware S-Pen/latency and SAF tests, large-document OOM defenses in non-tiled legacy brush paths, disk-backed undo history, optional MediaCodec video and companion USB transport. No live paid API calls or server deployment.

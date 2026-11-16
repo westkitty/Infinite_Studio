@@ -101,3 +101,14 @@
 | Native hardware `MediaCodec` MP4 video encoding (`F05`) | Explicitly omitted / unverified in headless JVM/Robolectric environment (`F05` verified for looping playback & PNG sprite sheet export). | `REPAIR_QUEUE.md` (`RQ-P1-04`) |
 | Android ↔ Python Companion live loopback over USB `adb reverse tcp:8787 tcp:8787` | No physical device / ADB available here (Android OkHttp `/health` + job calls verified against JVM loopback servers). | `TAB_S9_ULTRA_DEVICE_QA.md` (`D09`) |
 | Live remote host upstream OpenAI image-edit execution | Forbidden by no-paid-API rule & zero client credential policy | `BACKEND_CONTRACT.md` |
+
+
+---
+
+## 6. Protected recovery branch — independent engine repair validation (2026-11-16)
+
+- Source branch: `reconcile/restore-original-and-native`; original recovery commit `32c6db3`, implementation `2038f6b`, cache-key correction `3d84201`, CI setup correction `73c69b1`.
+- **[GitHub Actions 43820160709](https://github.com/westkitty/Infinite_Studio/actions/runs/43820160709): SUCCESS.** Kotlin application/test compilation, `:app:testDebugUnitTest` (37 tests including five added `EngineRepairRegressionTest` cases), `:app:assembleDebug`, and Python companion suite (3 tests) all passed. Source verified with Android SDK 36, JDK 21, Gradle 9.3.1 in isolated Linux CI.
+- The preceding [run 43819610050](https://github.com/westkitty/Infinite_Studio/actions/runs/43819610050) compiled and passed 36/37 tests; its single failure exposed a mismatch between the new image-cache fingerprint and `computeInvalidatedNodeIds`. Commit `3d84201` fixed that logic; the clean subsequent run passed.
+- Verified bounds: provisional stroke pixel location and `ACTION_CANCEL`, eraser restoration, real deterministic raster recipe output, original-layer preservation, cache reuse, changed-parameter invalidation, and cancellation. Physical S-Pen testing, sustained FPS, system picker and hardware MP4 were **not** executed.
+- This repairs the checked-out development branch only. GitHub `main` remains `db230c8`, which lacks ten historical browser files; original files are preserved byte-for-byte on the recovery branch. The old RC2 ZIP / APK hashes elsewhere in this document describe **pre-repair** artifacts, not this CI compilation. The CI debug APK is ephemeral and was not uploaded as a downloadable artifact.

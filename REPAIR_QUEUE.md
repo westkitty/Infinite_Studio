@@ -44,7 +44,7 @@ Ranked status of closed Living Workshop uplift tasks, remaining environment-bloc
    - **Next Action:** Implement `MediaCodec` + `MediaMuxer` surface encoder on physical device targets when MP4 video export is required, gating behind API capability checks.
 
 4. **`RQ-P1-03` Legacy Repository File Reconciliation (Git Branch Hygiene)**
-   - **Gap:** Original web prototype files (`index.html`, `original_source.html`, `laboratory.*`, `server.py`, `tests/`) remain preserved upstream on `westkitty/Infinite_Studio` `main` (`0e1497037505c011d7837874f5a277c5b65cc030161e36fc33102218f9970b76`).
+   - **Gap:** Migration commit `db230c8` removed ten web prototype files from GitHub `main`; commit `32c6db3` restored all ten original Git blobs unchanged on recovery branch `reconcile/restore-original-and-native` (protected `original_source.html` SHA-256 `0e1497037505c011d7837874f5a277c5b65cc030161e36fc33102218f9970b76`).
    - **Next Action:** Push/merge this native Android deliverable into a dedicated native branch or `android/` directory without overwriting `main`.
 
 ---
@@ -55,3 +55,10 @@ Ranked status of closed Living Workshop uplift tasks, remaining environment-bloc
    - **Detail:** Adding temporary PNG spillover to `cacheDir/history/` would extend deep undo beyond the current in-memory 48 MB / 24-step cap on 16k×16k canvases.
 6. **`RQ-P2-03` AndroidX Ink (`androidx.ink`) Low-Latency Front-Buffer Adoption (`ui/canvas/InfiniteCanvasView.kt`)**
    - **Detail:** Evaluating `CanvasFrontBufferedRenderer` on physical Tab S9 Ultra One UI hardware after `D01`–`D08` baseline validation.
+
+
+## 2026-11-16 engine repair closure
+
+- **G03 critical provisional alignment/eraser preview**: patched (`InfiniteCanvasView.kt`), five-case regression suite includes live preview alignment, eraser restoration and cancellation; GitHub Actions run `43820160709` passed. World-aligned bounded preview raster is built on input, not re-generated inside every `onDraw`. Physical S-Pen latency remains untested.
+- **F04 critical hash-only/synchronous recipe engine**: patched (`RecipePixelKernels.kt`, `RecipePixelOperators.kt`, `TimeAndRecipeEngine.kt`, `StudioViewModel.kt`). Five local deterministic node operations now modify real sparse-tile pixels, with cancellation, 24 MiB artifact cache, off-main-thread execution, stale-version guard and new accepted layer. The first cloud run caught a cache-invalidation mismatch; subsequent run `43820160709` passed.
+- Outstanding outside this bounded correction: real-device QA, deeper undo spillover, large-bounds smudge/fill OOM protections, native MP4, device-to-companion bridge, and ultimate merge decision. `main` has not been changed by these repairs.
