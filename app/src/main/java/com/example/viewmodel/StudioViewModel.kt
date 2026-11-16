@@ -87,12 +87,14 @@ class StudioViewModel(application: Application) : AndroidViewModel(application) 
     private var autosaveJob: Job? = null
     private var toastJob: Job? = null
     private var playbackJob: Job? = null
+    private var recipeJob: Job? = null
     private var activeProviderJob: Job? = null
     @Volatile
     private var recipeCancelRequested: Boolean = false
 
     override fun onCleared() {
         playbackJob?.cancel()
+        recipeJob?.cancel()
         activeProviderJob?.cancel()
         autosaveJob?.cancel()
         toastJob?.cancel()
@@ -1487,25 +1489,77 @@ class StudioViewModel(application: Application) : AndroidViewModel(application) 
 
     // F04 Creative Recipes & F03 Living Preview
     fun runCreativeRecipe() {
-        recipeCancelRequested = false
-        val doc = transactionEngine.current()
-        val report = TimeAndRecipeEngine.executeRecipeGraph(doc, shouldCancel = { recipeCancelRequested })
-        commitDoc("Execute Creative Recipe DAG") { base ->
-            val updatedList = if (base.recipes.any { it.id == report.updatedGraph.id }) {
-                base.recipes.map { if (it.id == report.updatedGraph.id) report.updatedGraph else it }
-            } else {
-                listOf(report.updatedGraph) + base.recipes
-            }
-            base.copy(recipes = updatedList)
+        if (recipeJob?.isActive == true) {
+            showToast("Recipe is already running")
+            return
         }
-        val errNote = report.updatedGraph.results.values.firstOrNull { it.status.startsWith("ERROR") }?.status
-        val msg = "Computed: ${report.computedNodeIds.joinToString()} | Reused cache: ${report.reusedNodeIds.joinToString()}"
-        _uiState.update { it.copy(lastRecipeReportSummary = msg, lastRecipeError = errNote) }
-        showToast(if (errNote != null) "Recipe finished with node error" else "Recipe complete (${report.computedNodeIds.size} computed, ${report.reusedNodeIds.size} cached)")
+        recipeCancelRequested = false
+        val snapshot = transactionEngine.current()
+        recipeJob = viewModelScope.launch {
+            try {
+                val workerJob = coroutineContext[Job]
+                val report = withContext(Dispatchers.Default) {
+                    TimeAndRecipeEngine.executeRecipeGraph(
+                        snapshot,
+                        shouldCancel = { recipeCancelRequested || workerJob?.isActive == false }
+                    )
+                }
+                if (report.canceled || recipeCancelRequested) {
+                    showToast("Recipe canceled (no document changes)")
+                    return@launch
+                }
+                val err = report.updatedGraph.results.values.firstOrNull { it.status.startsWith("ERROR") }?.status
+                val output = report.producedLayer
+                if (err != null || output == null) {
+                    _uiState.update {
+                        it.copy(lastRecipeError = err ?: "No image artifact produced")
+                    }
+                    showToast("Recipe failed without changing artwork")
+                    return@launch
+                }
+
+                // Do not commit a candidate calculated from an obsolete document snapshot.
+                val latest = transactionEngine.current()
+                if (latest.documentId != snapshot.documentId || latest.revision != snapshot.revision) {
+                    showToast("Artwork changed while recipe ran; discarded stale result")
+                    return@launch
+                }
+                val outputHash = output.pixelContentHash()
+                commitDoc("Apply Local Creative Recipe") { base ->
+                    val newRecipes = if (base.recipes.any { it.id == report.updatedGraph.id }) {
+                        base.recipes.map { if (it.id == report.updatedGraph.id) report.updatedGraph else it }
+                    } else {
+                        listOf(report.updatedGraph) + base.recipes
+                    }
+                    // The original source layer is never overwritten or selected away.
+                    val alreadyVisible = base.layers.any {
+                        it.name == output.name && it.pixelContentHash() == outputHash
+                    }
+                    base.copy(
+                        recipes = newRecipes,
+                        layers = if (alreadyVisible) base.layers else base.layers + output
+                    )
+                }
+                val msg = "Real pixel stages: ${report.computedNodeIds.joinToString()} | Cached: ${report.reusedNodeIds.joinToString()}"
+                _uiState.update {
+                    it.copy(lastRecipeReportSummary = msg, lastRecipeError = null)
+                }
+                showToast("Recipe applied as editable layer")
+            } catch (_: kotlinx.coroutines.CancellationException) {
+                showToast("Recipe canceled (no document changes)")
+            } catch (error: Exception) {
+                logError("Recipe execution: ${error.message}")
+                _uiState.update { it.copy(lastRecipeError = error.message ?: "Recipe execution error") }
+                showToast("Recipe failed safely")
+            } finally {
+                recipeJob = null
+            }
+        }
     }
 
     fun cancelCreativeRecipe() {
         recipeCancelRequested = true
+        recipeJob?.cancel()
         showToast("Recipe cancel requested")
     }
 

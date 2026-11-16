@@ -55,7 +55,8 @@ data class RecipeRunReport(
     val computedNodeIds: List<String>,
     val reusedNodeIds: List<String>,
     val updatedGraph: RecipeGraph,
-    val canceled: Boolean
+    val canceled: Boolean,
+    val producedLayer: com.example.document.DocumentLayer? = null
 )
 
 data class LivingPreviewSnapshot(
@@ -316,6 +317,38 @@ object TimeAndRecipeEngine {
      * is REUSED directly from cache; modifying a downstream stage only invalidates that stage
      * and its descendants—never recomputing unchanged upstream nodes!
      */
+    // Session-local, size-bounded PNG-tile caches. Serialized result hashes are not treated as
+    // executable artifacts after an app restart; missing payloads always recompute.
+    private const val MAX_RECIPE_CACHE_BYTES = 24L * 1024L * 1024L
+    private val stageArtifacts = LinkedHashMap<String, com.example.document.DocumentLayer>(24, 0.75f, true)
+    private var stageCacheBytes = 0L
+
+    private fun cachedStage(key: String): com.example.document.DocumentLayer? =
+        synchronized(stageArtifacts) { stageArtifacts[key] }
+
+    private fun rememberStage(key: String, layer: com.example.document.DocumentLayer) {
+        val bytes = layer.tiles.values.sumOf { it.size.toLong() }
+        if (bytes > MAX_RECIPE_CACHE_BYTES) return
+        synchronized(stageArtifacts) {
+            stageArtifacts.remove(key)?.let { old ->
+                stageCacheBytes -= old.tiles.values.sumOf { it.size.toLong() }
+            }
+            stageArtifacts[key] = layer
+            stageCacheBytes += bytes
+            val it = stageArtifacts.entries.iterator()
+            while (stageCacheBytes > MAX_RECIPE_CACHE_BYTES && it.hasNext()) {
+                val eldest = it.next()
+                stageCacheBytes -= eldest.value.tiles.values.sumOf { tile -> tile.size.toLong() }
+                it.remove()
+            }
+        }
+    }
+
+    /**
+     * F04: actually executes each local pixel operator on immutable sparse PNG tiles.
+     * Only a completed result is returned for a later transactional accept-as-layer.
+     * Previously persisted hash-only successes are recomputed because they have no pixels.
+     */
     fun executeRecipeGraph(
         doc: CanonicalDocument,
         recipeId: String = doc.recipes.firstOrNull()?.id ?: "recipe_default",
@@ -323,9 +356,14 @@ object TimeAndRecipeEngine {
     ): RecipeRunReport {
         val graph = doc.recipes.find { it.id == recipeId } ?: RecipeGraph()
         val ordered = topologicalSort(graph).getOrThrow()
-        val baseHash = doc.documentContentHash().take(16)
+        val source = doc.layers.find { it.id == doc.activeLayerId && !it.id.startsWith("recipe_output_") }
+            ?: doc.layers.firstOrNull { it.tiles.isNotEmpty() && !it.id.startsWith("recipe_output_") }
+        val baseHash = sha256Short(
+            "${doc.documentId}:${source?.id}:${source?.pixelContentHash()}:${source?.transform}"
+        )
 
         val newResults = LinkedHashMap<String, RecipeStageResult>(graph.results)
+        val outputLayers = linkedMapOf<String, com.example.document.DocumentLayer>()
         val computed = mutableListOf<String>()
         val reused = mutableListOf<String>()
         var canceled = false
@@ -339,47 +377,72 @@ object TimeAndRecipeEngine {
             val upstreamError = node.inputNodeIds.firstOrNull { upId ->
                 newResults[upId]?.status?.startsWith("ERROR") == true
             }
-            if (paramError != null || upstreamError != null) {
-                val errMsg = paramError ?: "Blocked by upstream error in '$upstreamError'"
+            if (paramError != null || upstreamError != null || source == null) {
+                val err = paramError ?: when {
+                    source == null -> "No editable source layer"
+                    else -> "Blocked by upstream error in '$upstreamError'"
+                }
                 newResults[node.id] = RecipeStageResult(
-                    nodeId = node.id,
-                    cacheKey = "invalid",
-                    status = "ERROR: $errMsg",
-                    outputHash = "ERR",
-                    computedAtIso = Instant.now().toString()
+                    node.id, "invalid", "ERROR: $err", "ERR", Instant.now().toString()
                 )
                 computed.add(node.id)
                 continue
             }
 
-            val upstreamKeys = node.inputNodeIds.map { upId -> newResults[upId]?.cacheKey ?: "" }
+            val upstreamKeys = node.inputNodeIds.map { newResults[it]?.cacheKey ?: "" }
             val cacheKey = computeNodeCacheKey(baseHash, node, upstreamKeys)
-            val prevResult = graph.results[node.id]
-            if (prevResult != null && prevResult.cacheKey == cacheKey && prevResult.status == "SUCCEEDED") {
+            val prev = graph.results[node.id]
+            val cached = cachedStage(cacheKey)
+            if (prev != null && prev.cacheKey == cacheKey && prev.status == "SUCCEEDED" &&
+                cached != null && cached.pixelContentHash() == prev.outputHash
+            ) {
+                outputLayers[node.id] = cached
+                newResults[node.id] = prev
                 reused.add(node.id)
-                newResults[node.id] = prevResult
-            } else {
-                // Deterministic stage execution digest
-                val outHash = sha256Short("$cacheKey:${node.kind.name}:${node.title}")
-                computed.add(node.id)
+                continue
+            }
+
+            try {
+                val inputs = if (node.inputNodeIds.isEmpty()) listOf(source)
+                else node.inputNodeIds.map { outputLayers[it] ?: error("Missing computed upstream image: $it") }
+                val src = RecipePixelOperators.composite(inputs, doc, shouldCancel)
+                val artifact = RecipePixelOperators.apply(src, node, doc, shouldCancel)
+                if (shouldCancel()) throw RecipePixelKernels.Canceled()
+                rememberStage(cacheKey, artifact)
+                outputLayers[node.id] = artifact
                 newResults[node.id] = RecipeStageResult(
-                    nodeId = node.id,
-                    cacheKey = cacheKey,
-                    status = "SUCCEEDED",
-                    outputHash = outHash,
-                    computedAtIso = Instant.now().toString()
+                    node.id, cacheKey, "SUCCEEDED", artifact.pixelContentHash(), Instant.now().toString()
                 )
+                computed.add(node.id)
+            } catch (_: RecipePixelKernels.Canceled) {
+                canceled = true
+                break
+            } catch (error: Exception) {
+                newResults[node.id] = RecipeStageResult(
+                    node.id, cacheKey, "ERROR: ${error.message ?: error.javaClass.simpleName}",
+                    "ERR", Instant.now().toString()
+                )
+                computed.add(node.id)
             }
         }
 
         val updatedGraph = graph.copy(results = newResults)
+        val finalNode = ordered.lastOrNull()
+        val finalArtifact = if (!canceled && finalNode != null &&
+            newResults[finalNode.id]?.status == "SUCCEEDED"
+        ) outputLayers[finalNode.id] else null
         return RecipeRunReport(
             recipeId = updatedGraph.id,
             orderedNodeIds = ordered.map { it.id },
             computedNodeIds = computed,
             reusedNodeIds = reused,
             updatedGraph = updatedGraph,
-            canceled = canceled
+            canceled = canceled,
+            producedLayer = finalArtifact?.copy(
+                id = "recipe_output_${UUID.randomUUID().toString().take(12)}",
+                name = "Recipe: ${graph.name}",
+                visible = true
+            )
         )
     }
 
@@ -578,7 +641,7 @@ object TimeAndRecipeEngine {
     private fun computeNodeCacheKey(baseHash: String, node: RecipeNode, upstreamKeys: List<String>): String {
         val paramStr = node.parameters.toSortedMap().entries.joinToString(",") { "${it.key}=${it.value}" }
         val upStr = upstreamKeys.joinToString("|")
-        return sha256Short("$baseHash:${node.id}:${node.kind.name}:$paramStr:$upStr")
+        return sha256Short("pixel-kernels-v1:$baseHash:${node.id}:${node.kind.name}:$paramStr:$upStr")
     }
 
     private fun sha256Short(input: String): String {

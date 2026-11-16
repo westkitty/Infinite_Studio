@@ -24,6 +24,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.document.ConstraintKind
+import com.example.document.CanonicalDocument
+import com.example.document.DocumentBounds
 import com.example.document.Vec2
 import com.example.document.VectorKind
 import com.example.features.VectorAndFoundryEngine
@@ -40,6 +42,8 @@ import com.example.render.SparseTileRenderer
 import com.example.tools.TileBrushEngine
 import kotlin.math.abs
 import kotlin.math.atan2
+import kotlin.math.ceil
+import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
@@ -141,7 +145,7 @@ private enum class CanvasGizmoDrag {
     VECTOR_BEZIER
 }
 
-private class StudioNativeCanvasView(
+internal class StudioNativeCanvasView(
     context: Context,
     private val tileRenderer: SparseTileRenderer,
     private val getState: () -> StudioUiState,
@@ -176,6 +180,95 @@ private class StudioNativeCanvasView(
     }
 
     private val provisionalSamples = mutableListOf<Pair<Vec2, Float>>()
+    private var provisionalPreviewBitmap: Bitmap? = null
+    private var provisionalPreviewOriginX = 0f
+    private var provisionalPreviewOriginY = 0f
+    private var erasedPreviewDocument: CanonicalDocument? = null
+
+    private fun clearProvisionalPreview() {
+        provisionalPreviewBitmap?.recycle()
+        provisionalPreviewBitmap = null
+        erasedPreviewDocument = null
+    }
+
+    /**
+     * Called from the input router, never onDraw. The bitmap is a world-positioned
+     * overlay above the active layer. The eraser instead previews an immutable
+     * sparse-tile copy of that layer, so lower layers show through accurately.
+     */
+    private fun updateProvisionalPreview() {
+        val state = getState()
+        if (provisionalSamples.isEmpty()) {
+            clearProvisionalPreview()
+            return
+        }
+        val params = TileBrushEngine.StrokeRenderParams(
+            tool = state.activeTool,
+            colorInt = state.brushColorInt,
+            preset = state.activeBrushPreset,
+            symmetryMode = state.symmetryMode,
+            activeMask = state.activeSelectionMask
+        )
+        if (state.activeTool == StudioTool.ERASER) {
+            provisionalPreviewBitmap?.recycle()
+            provisionalPreviewBitmap = null
+            val activeId = state.document.activeLayerId ?: return
+            erasedPreviewDocument = TileBrushEngine.commitStrokeToDocument(
+                state.document, tileRenderer, activeId, provisionalSamples, params
+            )
+            return
+        }
+        erasedPreviewDocument = null
+        val strokeRect = TileBrushEngine.computeDirtyRectForPoints(
+            provisionalSamples.map { it.first },
+            margin = state.activeBrushPreset.radius * 2.5f + 24f,
+            symmetryMode = state.symmetryMode
+        )
+        val scale = max(0.05f, state.viewScale)
+        val viewRect = RectF(
+            (-width / 2f - state.viewOffsetX) / scale,
+            (-height / 2f - state.viewOffsetY) / scale,
+            (width / 2f - state.viewOffsetX) / scale,
+            (height / 2f - state.viewOffsetY) / scale
+        )
+        if (!strokeRect.intersect(viewRect)) {
+            clearProvisionalPreview()
+            return
+        }
+        val left = floor(strokeRect.left / 128f) * 128f
+        val top = floor(strokeRect.top / 128f) * 128f
+        val right = ceil(strokeRect.right / 128f) * 128f
+        val bottom = ceil(strokeRect.bottom / 128f) * 128f
+        val bmpW = max(1, (right - left).toInt())
+        val bmpH = max(1, (bottom - top).toInt())
+        // Explicit 32 MiB cap; never allocate a document-sized provisional bitmap.
+        if (bmpW.toLong() * bmpH.toLong() > 8_388_608L) {
+            clearProvisionalPreview()
+            return
+        }
+        val old = provisionalPreviewBitmap
+        val bmp = if (old != null && !old.isRecycled && old.width == bmpW &&
+            old.height == bmpH && provisionalPreviewOriginX == left &&
+            provisionalPreviewOriginY == top
+        ) {
+            old.eraseColor(Color.TRANSPARENT)
+            old
+        } else {
+            old?.recycle()
+            Bitmap.createBitmap(bmpW, bmpH, Bitmap.Config.ARGB_8888).also {
+                provisionalPreviewBitmap = it
+                provisionalPreviewOriginX = left
+                provisionalPreviewOriginY = top
+            }
+        }
+        TileBrushEngine.renderStrokeOnCanvas(
+            Canvas(bmp),
+            DocumentBounds(minX = left, minY = top, width = bmpW, height = bmpH),
+            provisionalSamples,
+            params,
+            alphaLock = false
+        )
+    }
     private var shapePreviewStart: PointF? = null
     private var shapePreviewEnd: PointF? = null
     private var hoverWorldPos: PointF? = null
@@ -285,6 +378,7 @@ private class StudioNativeCanvasView(
     }
 
     override fun onDetachedFromWindow() {
+        clearProvisionalPreview()
         selectionAnimating = false
         removeCallbacks(marqueeTicker)
         super.onDetachedFromWindow()
@@ -380,16 +474,18 @@ private class StudioNativeCanvasView(
                 }
                 invalidate()
             } else {
-                val isBrushStroke = st.shapeGuide == ShapeGuide.FREEHAND && st.activeTool !in listOf(
-                    StudioTool.LASSO, StudioTool.RECT_SELECT, StudioTool.TRANSFORM,
-                    StudioTool.VECTOR_EDIT, StudioTool.FILL, StudioTool.EYEDROPPER, StudioTool.ERASER
-                )
+                val isBrushStroke = (st.shapeGuide == ShapeGuide.FREEHAND || st.activeTool == StudioTool.ERASER) &&
+                    st.activeTool !in listOf(
+                        StudioTool.LASSO, StudioTool.RECT_SELECT, StudioTool.TRANSFORM,
+                        StudioTool.VECTOR_EDIT, StudioTool.FILL, StudioTool.EYEDROPPER
+                    )
                 if (isBrushStroke) {
                     provisionalSamples.add(Vec2(sample.worldX, sample.worldY) to sample.pressure)
                 }
                 val (s, e) = onBeginPointer(wp, sample.pressure)
                 shapePreviewStart = s
                 shapePreviewEnd = e
+                if (isBrushStroke) updateProvisionalPreview()
                 invalidate()
             }
         },
@@ -444,10 +540,11 @@ private class StudioNativeCanvasView(
                 }
                 invalidate()
             } else {
-                val isBrushStroke = st.shapeGuide == ShapeGuide.FREEHAND && st.activeTool !in listOf(
-                    StudioTool.LASSO, StudioTool.RECT_SELECT, StudioTool.TRANSFORM,
-                    StudioTool.VECTOR_EDIT, StudioTool.FILL, StudioTool.EYEDROPPER, StudioTool.ERASER
-                )
+                val isBrushStroke = (st.shapeGuide == ShapeGuide.FREEHAND || st.activeTool == StudioTool.ERASER) &&
+                    st.activeTool !in listOf(
+                        StudioTool.LASSO, StudioTool.RECT_SELECT, StudioTool.TRANSFORM,
+                        StudioTool.VECTOR_EDIT, StudioTool.FILL, StudioTool.EYEDROPPER
+                    )
                 for (s in samples) {
                     if (isBrushStroke) {
                         provisionalSamples.add(Vec2(s.worldX, s.worldY) to s.pressure)
@@ -458,11 +555,13 @@ private class StudioNativeCanvasView(
                         shapePreviewEnd = pe
                     }
                 }
+                if (isBrushStroke) updateProvisionalPreview()
                 invalidate()
             }
         },
         onEndStroke = {
             provisionalSamples.clear()
+            clearProvisionalPreview()
             shapePreviewStart = null
             shapePreviewEnd = null
             activeSnapPoint = null
@@ -485,6 +584,7 @@ private class StudioNativeCanvasView(
         },
         onCancelStroke = {
             provisionalSamples.clear()
+            clearProvisionalPreview()
             shapePreviewStart = null
             shapePreviewEnd = null
             activeSnapPoint = null
@@ -555,34 +655,20 @@ private class StudioNativeCanvasView(
         canvas.translate(vw / 2f + state.viewOffsetX, vh / 2f + state.viewOffsetY)
         canvas.scale(scale, scale)
 
-        // 2. Sparse 256x256 tile composite + vectors + onion skin
+        // 2. Sparse tile composite + cached world-space provisional preview.
+        // The original document is never changed by a provisional eraser gesture.
         tileRenderer.renderDocumentViewport(
             nativeCanvas = canvas,
-            doc = state.document,
+            doc = erasedPreviewDocument ?: state.document,
             viewportWidth = vw,
             viewportHeight = vh,
             viewScale = scale,
             viewOffsetX = state.viewOffsetX,
-            viewOffsetY = state.viewOffsetY
+            viewOffsetY = state.viewOffsetY,
+            provisionalBitmap = provisionalPreviewBitmap,
+            provisionalOriginWorldX = provisionalPreviewOriginX,
+            provisionalOriginWorldY = provisionalPreviewOriginY
         )
-
-        // 3. Zero-lag provisional stroke overlay before commit
-        if (provisionalSamples.isNotEmpty() && state.activeTool != StudioTool.AI_GUIDANCE) {
-            val params = TileBrushEngine.StrokeRenderParams(
-                tool = state.activeTool,
-                colorInt = state.brushColorInt,
-                preset = state.activeBrushPreset,
-                symmetryMode = state.symmetryMode,
-                activeMask = state.activeSelectionMask
-            )
-            TileBrushEngine.renderStrokeOnCanvas(
-                canvas = canvas,
-                canvasBounds = state.document.bounds,
-                worldPoints = provisionalSamples,
-                params = params,
-                alphaLock = false
-            )
-        }
 
         // 4. Origin Crosshair
         originPaint.strokeWidth = 1.5f / scale
