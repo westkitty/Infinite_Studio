@@ -1,0 +1,194 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Infinite Studio Companion & Provider Router API",
+    "version": "1.0.0",
+    "description": "Provider-neutral asynchronous image edit, outpainting, and provenance contract for Infinite Studio - The Futures Table. Binds strictly to loopback (127.0.0.1:8787) by default."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8787",
+      "description": "Local loopback companion server (default)"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Optional host bearer token configured via INFINITE_COMPANION_AUTH_TOKEN."
+      }
+    },
+    "schemas": {
+      "ProviderHealth": {
+        "type": "object",
+        "required": ["providerId", "status", "offlineSafe", "detail"],
+        "properties": {
+          "providerId": { "type": "string" },
+          "status": { "type": "string", "enum": ["healthy", "armed", "unconfigured", "unreachable"] },
+          "offlineSafe": { "type": "boolean" },
+          "detail": { "type": "string" }
+        }
+      },
+      "ProviderCapabilities": {
+        "type": "object",
+        "required": ["providerId", "supportsImageEdit", "supportsOutpaint", "maxResolutionPx", "supportsCancel"],
+        "properties": {
+          "providerId": { "type": "string" },
+          "supportsImageEdit": { "type": "boolean" },
+          "supportsOutpaint": { "type": "boolean" },
+          "maxResolutionPx": { "type": "integer", "minimum": 64, "maximum": 8192 },
+          "supportsCancel": { "type": "boolean" },
+          "requiresExplicitConsentForRemote": { "type": "boolean" },
+          "maxPayloadBytes": { "type": "integer" },
+          "retentionTtlSeconds": { "type": "integer" }
+        }
+      },
+      "ProviderJobRequest": {
+        "type": "object",
+        "required": ["idempotencyKey", "documentId", "baseRevision", "branchLabel", "prompt", "cropPngBase64"],
+        "properties": {
+          "idempotencyKey": { "type": "string", "minLength": 1 },
+          "documentId": { "type": "string" },
+          "baseRevision": { "type": "integer", "format": "int64" },
+          "expectedRevision": { "type": "integer", "format": "int64", "nullable": true },
+          "branchLabel": { "type": "string" },
+          "directionSuffix": { "type": "string" },
+          "prompt": { "type": "string" },
+          "modelId": { "type": "string", "default": "gpt-image-2.6-flare" },
+          "cropPngBase64": { "type": "string", "description": "Base64-encoded image/png bytes matching PNG signature" },
+          "maskPngBase64": { "type": "string", "nullable": true, "description": "Optional base64-encoded image/png mask" },
+          "userConfirmedPaidEgress": { "type": "boolean", "default": false }
+        }
+      },
+      "ProviderJobStatus": {
+        "type": "string",
+        "enum": ["QUEUED", "RUNNING", "SUCCEEDED", "FAILED", "CANCELED"]
+      },
+      "ProviderErrorCode": {
+        "type": "string",
+        "enum": [
+          "NONE",
+          "OFFLINE_MODE_ACTIVE",
+          "PAID_EGRESS_DISABLED",
+          "CONSENT_REQUIRED",
+          "MISSING_API_KEY",
+          "QUOTA_CAP_REACHED",
+          "STALE_DOCUMENT_REVISION",
+          "NETWORK_ERROR",
+          "INVALID_RESPONSE"
+        ]
+      },
+      "ProviderJobRecord": {
+        "type": "object",
+        "required": ["jobId", "idempotencyKey", "providerId", "documentId", "baseRevision", "status", "processingMode", "message", "errorCode"],
+        "properties": {
+          "jobId": { "type": "string" },
+          "idempotencyKey": { "type": "string" },
+          "providerId": { "type": "string" },
+          "documentId": { "type": "string" },
+          "baseRevision": { "type": "integer", "format": "int64" },
+          "status": { "$ref": "#/components/schemas/ProviderJobStatus" },
+          "processingMode": { "type": "string" },
+          "resultPngBase64": { "type": "string", "nullable": true },
+          "message": { "type": "string" },
+          "errorCode": { "$ref": "#/components/schemas/ProviderErrorCode" },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "modelVersion": { "type": "string" },
+              "sourceHash": { "type": "string" },
+              "createdAtEpoch": { "type": "integer", "format": "int64" },
+              "expiresAtEpoch": { "type": "integer", "format": "int64" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Check companion provider health",
+        "security": [{ "bearerAuth": [] }, {}],
+        "responses": {
+          "200": {
+            "description": "Healthy response",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProviderHealth" } } }
+          },
+          "401": { "description": "Missing or invalid bearer token when auth is enabled" }
+        }
+      }
+    },
+    "/capabilities": {
+      "get": {
+        "summary": "Discover provider capabilities and payload bounds",
+        "security": [{ "bearerAuth": [] }, {}],
+        "responses": {
+          "200": {
+            "description": "Capability metadata",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProviderCapabilities" } } }
+          }
+        }
+      }
+    },
+    "/jobs": {
+      "post": {
+        "summary": "Submit idempotent candidate generation job",
+        "security": [{ "bearerAuth": [] }, {}],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProviderJobRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Job accepted or idempotent replay returned",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProviderJobRecord" } } }
+          },
+          "400": { "description": "Malformed payload or missing required fields" },
+          "403": { "description": "Remote paid egress blocked without userConfirmedPaidEgress=true" },
+          "409": { "description": "Stale document revision mismatch" },
+          "413": { "description": "Payload exceeded maxPayloadBytes" },
+          "415": { "description": "Unsupported media type or non-PNG payload" }
+        }
+      }
+    },
+    "/jobs/{id}": {
+      "get": {
+        "summary": "Poll job status and provenance metadata",
+        "security": [{ "bearerAuth": [] }, {}],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": {
+            "description": "Job state",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProviderJobRecord" } } }
+          },
+          "404": { "description": "Job unknown or expired" }
+        }
+      },
+      "delete": {
+        "summary": "Explicitly purge stored job result before TTL expiry",
+        "security": [{ "bearerAuth": [] }, {}],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Job deleted" },
+          "404": { "description": "Job not found" }
+        }
+      }
+    },
+    "/jobs/{id}/cancel": {
+      "post": {
+        "summary": "Cancel a queued or running job",
+        "security": [{ "bearerAuth": [] }, {}],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": {
+            "description": "Job canceled",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProviderJobRecord" } } }
+          },
+          "404": { "description": "Job not found" }
+        }
+      }
+    }
+  }
+}

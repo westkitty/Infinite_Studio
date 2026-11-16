@@ -1,0 +1,124 @@
+{
+  "format": "infinite-studio-archive",
+  "schemaVersion": 3,
+  "document": {
+    "documentId": "doc_sample_futures",
+    "revision": 5,
+    "title": "One Mark Three Futures - Offline Sample",
+    "bounds": {
+      "minX": -1200.0,
+      "minY": -800.0,
+      "width": 2400,
+      "height": 1600,
+      "units": "px"
+    },
+    "tileSize": 256,
+    "paperColorHex": "#f4f1ea",
+    "activeLayerId": "layer_ink",
+    "layers": [
+      {
+        "id": "layer_ink",
+        "name": "Original Ink Mark",
+        "visible": true,
+        "opacity": 1.0,
+        "blendModeId": "source-over",
+        "alphaLock": false,
+        "transform": { "offsetX": 0.0, "offsetY": 0.0, "scaleX": 1.0, "scaleY": 1.0, "rotationDeg": 0.0 },
+        "depthPlaneId": "plane_mid",
+        "tileKeys": ["4_2", "4_3"]
+      },
+      {
+        "id": "layer_future_copper",
+        "name": "Copper Light (LOCAL_STUDY)",
+        "visible": true,
+        "opacity": 0.92,
+        "blendModeId": "source-over",
+        "alphaLock": false,
+        "transform": { "offsetX": 0.0, "offsetY": 0.0, "scaleX": 1.0, "scaleY": 1.0, "rotationDeg": 0.0 },
+        "depthPlaneId": "plane_fg",
+        "tileKeys": ["4_2"]
+      }
+    ],
+    "vectorObjects": [
+      {
+        "id": "vec_balloon_1",
+        "kind": "SPEECH_BALLOON",
+        "x": -180.0,
+        "y": -260.0,
+        "width": 320.0,
+        "height": 120.0,
+        "strokeColorHex": "#09090B",
+        "fillColorHex": "#FFFFFF",
+        "strokeWidth": 3.5,
+        "text": "ZERO SACRIFICED ORIGINALS",
+        "fontSizeSp": 18.0,
+        "nodes": [],
+        "tailTip": { "x": -30.0, "y": -90.0 },
+        "rotationDeg": 0.0,
+        "visible": true
+      }
+    ],
+    "masks": [
+      {
+        "id": "mask_lantern",
+        "name": "Protected Study Region",
+        "points": [
+          { "x": -90.0, "y": -90.0 },
+          { "x": 90.0, "y": -90.0 },
+          { "x": 90.0, "y": 90.0 },
+          { "x": -90.0, "y": 90.0 }
+        ],
+        "inverted": false,
+        "createdAtIso": "2026-11-15T12:00:00Z"
+      }
+    ],
+    "semanticObjects": [],
+    "constraints": [
+      {
+        "id": "cst_silhouette",
+        "kind": "PROTECTED_SILHOUETTE",
+        "label": "Lantern Contour Lock",
+        "note": "Hard local mask boundary enforced across Futures acceptance.",
+        "points": [
+          { "x": -90.0, "y": -90.0 },
+          { "x": 90.0, "y": -90.0 },
+          { "x": 90.0, "y": 90.0 },
+          { "x": -90.0, "y": 90.0 }
+        ],
+        "userLocked": true,
+        "referenceId": null
+      }
+    ],
+    "materials": [
+      {
+        "id": "mat_copper",
+        "name": "Hammered Copper Trim",
+        "targetLayerId": "layer_future_copper",
+        "baseColorHex": "#D4763E",
+        "roughness": 0.32,
+        "metalness": 0.85,
+        "alpha": 1.0,
+        "emissiveHex": "#261205",
+        "reliefStrength": 0.55,
+        "lightAzimuthDeg": 45.0,
+        "lightElevationDeg": 55.0
+      }
+    ],
+    "timeline": {
+      "fps": 8,
+      "currentFrameIndex": 0,
+      "onionSkinEnabled": true,
+      "frames": [
+        { "id": "frame_1", "label": "Frame 1", "durationMs": 125, "layerKeyframes": [] },
+        { "id": "frame_2", "label": "Frame 2", "durationMs": 125, "layerKeyframes": [] }
+      ]
+    },
+    "activeBranchId": "branch_copper"
+  },
+  "assetChecksums": {
+    "tiles/layer_ink/4_2.png": "0000000000000000000000000000000000000000000000000000000000000000",
+    "tiles/layer_ink/4_3.png": "0000000000000000000000000000000000000000000000000000000000000000",
+    "tiles/layer_future_copper/4_2.png": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "unknownFields": {}
+}

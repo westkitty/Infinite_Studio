@@ -1,0 +1,13 @@
+{
+  "idempotencyKey": "fixture-idem-2026-0001",
+  "documentId": "doc_sample_futures",
+  "baseRevision": 4,
+  "expectedRevision": 4,
+  "branchLabel": "Blue Hour",
+  "directionSuffix": "cool nocturnal skylight and cyan rim highlights",
+  "prompt": "Explore cool atmospheric lighting inside permitted region while preserving original contour.",
+  "modelId": "gpt-image-2.6-flare",
+  "cropPngBase64": "iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAH0lEQVR4nGN8d+z4fwYGBgYGLAAjAxIAs4EKGBkZAB7mB/2mQ+zTAAAAAElFTkSuQmCC",
+  "maskPngBase64": null,
+  "userConfirmedPaidEgress": false
+}

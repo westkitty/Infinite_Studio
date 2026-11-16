@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Infinite Studio</string>
+    <string name="brand_infinite">INFINITE</string>
+    <string name="brand_ai">AI</string>
+    <string name="futures_kicker">THE FUTURES TABLE · SELECT → EXPLORE → COMMIT</string>
+    <string name="futures_title">One drawing. Three possible lives.</string>
+    <string name="futures_subtitle">The original stays intact until you explicitly accept a branch.</string>
+    <string name="project_kicker">PROJECT VAULT</string>
+    <string name="project_title">Keep the whole drawing.</string>
+    <string name="project_subtitle">Editable layers, blending, canvas bounds and view — not merely an exported picture.</string>
+    <string name="export_title">Export Artwork</string>
+</resources>
