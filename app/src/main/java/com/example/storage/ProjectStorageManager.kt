@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Canvas
 import android.graphics.RectF
 import android.net.Uri
 import androidx.core.content.FileProvider
@@ -44,6 +43,10 @@ data class RecoveryJournal(
  */
 class ProjectStorageManager(private val context: Context) {
 
+    companion object {
+        private const val MAX_IMPORTED_PHOTO_BYTES = 32L * 1024L * 1024L
+    }
+
     private val projectsDir: File by lazy {
         File(context.filesDir, "projects").apply { mkdirs() }
     }
@@ -80,7 +83,7 @@ class ProjectStorageManager(private val context: Context) {
         if (!draftFile.exists()) {
             Result.failure(IllegalStateException("No local draft archive found."))
         } else {
-            DocumentArchiveCodec.readDocument(draftFile.readBytes())
+            draftFile.inputStream().use { DocumentArchiveCodec.readDocument(it) }
         }
     }
 
@@ -96,9 +99,9 @@ class ProjectStorageManager(private val context: Context) {
 
     suspend fun openArchiveFromUri(uri: Uri): Result<CanonicalDocument> = withContext(Dispatchers.IO) {
         runCatching {
-            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            val input = context.contentResolver.openInputStream(uri)
                 ?: error("Unable to open project file URI.")
-            DocumentArchiveCodec.readDocument(bytes).getOrThrow()
+            input.use { DocumentArchiveCodec.readDocument(it).getOrThrow() }
         }
     }
 
@@ -121,7 +124,21 @@ class ProjectStorageManager(private val context: Context) {
         layerName: String = "Imported Photo"
     ): Result<DocumentLayer> = withContext(Dispatchers.IO) {
         runCatching {
-            val rawBytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            val rawBytes = context.contentResolver.openInputStream(uri)?.use { input ->
+                val output = java.io.ByteArrayOutputStream()
+                val buffer = ByteArray(8 * 1024)
+                var total = 0L
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    total += count
+                    require(total <= MAX_IMPORTED_PHOTO_BYTES) {
+                        "Selected image exceeds the ${MAX_IMPORTED_PHOTO_BYTES / (1024 * 1024)} MiB import limit."
+                    }
+                    output.write(buffer, 0, count)
+                }
+                output.toByteArray()
+            }
                 ?: error("Unable to read selected image.")
             val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeByteArray(rawBytes, 0, rawBytes.size, opts)
@@ -134,20 +151,23 @@ class ProjectStorageManager(private val context: Context) {
             val decoded = BitmapFactory.decodeByteArray(rawBytes, 0, rawBytes.size, decodeOpts)
                 ?: error("Selected file is not a supported bitmap image.")
 
-            val targetBmp = Bitmap.createBitmap(doc.bounds.width, doc.bounds.height, Bitmap.Config.ARGB_8888)
-            val canvas = Canvas(targetBmp)
-            val maxFitW = doc.bounds.width * 0.65f
-            val maxFitH = doc.bounds.height * 0.65f
-            val scale = min(1f, min(maxFitW / decoded.width, maxFitH / decoded.height))
-            val drawW = (decoded.width * scale).roundToInt()
-            val drawH = (decoded.height * scale).roundToInt()
-            val left = (doc.bounds.width - drawW) / 2f
-            val top = (doc.bounds.height - drawH) / 2f
-            canvas.drawBitmap(decoded, null, RectF(left, top, left + drawW, top + drawH), null)
-            decoded.recycle()
-
-            val tiles = DocumentArchiveCodec.sliceBitmapToSparseTiles(targetBmp, doc.tileSize)
-            targetBmp.recycle()
+            val tiles = try {
+                val maxFitW = doc.bounds.width * 0.65f
+                val maxFitH = doc.bounds.height * 0.65f
+                val scale = min(1f, min(maxFitW / decoded.width, maxFitH / decoded.height))
+                val drawW = (decoded.width * scale).roundToInt().coerceAtLeast(1)
+                val drawH = (decoded.height * scale).roundToInt().coerceAtLeast(1)
+                val left = (doc.bounds.width - drawW) / 2f
+                val top = (doc.bounds.height - drawH) / 2f
+                DocumentArchiveCodec.rasterBitmapToSparseTiles(
+                    bitmap = decoded,
+                    destination = RectF(left, top, left + drawW, top + drawH),
+                    bounds = doc.bounds,
+                    tileSize = doc.tileSize
+                )
+            } finally {
+                decoded.recycle()
+            }
 
             DocumentLayer(
                 id = "layer_${UUID.randomUUID().toString().take(8)}",

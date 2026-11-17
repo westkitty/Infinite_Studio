@@ -1,6 +1,7 @@
 package com.example
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -29,6 +30,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.io.ByteArrayOutputStream
+import java.io.ByteArrayInputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -36,6 +38,51 @@ import java.util.zip.ZipOutputStream
 @Config(sdk = [35])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class DocumentAndArchiveTests {
+
+    @Test
+    fun `sparse bitmap placement allocates only intersecting tiles on maximum canvas`() {
+        val source = Bitmap.createBitmap(8, 8, Bitmap.Config.ARGB_8888).apply {
+            eraseColor(Color.RED)
+        }
+        val tiles = try {
+            DocumentArchiveCodec.rasterBitmapToSparseTiles(
+                bitmap = source,
+                destination = android.graphics.RectF(8188f, 8188f, 8196f, 8196f),
+                bounds = DocumentBounds(width = 16384, height = 16384)
+            )
+        } finally {
+            source.recycle()
+        }
+
+        assertEquals(setOf("31_31", "32_31", "31_32", "32_32"), tiles.keys)
+        fun pixel(tileKey: String, x: Int, y: Int): Int {
+            val bytes = tiles.getValue(tileKey)
+            val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            assertNotNull(bitmap)
+            return bitmap!!.getPixel(x, y).also { bitmap.recycle() }
+        }
+        assertEquals(Color.RED, pixel("31_31", 254, 254))
+        assertEquals(Color.RED, pixel("32_31", 0, 254))
+        assertEquals(Color.RED, pixel("31_32", 254, 0))
+        assertEquals(Color.RED, pixel("32_32", 0, 0))
+    }
+
+    @Test
+    fun `archive stream input stops at its configured byte limit`() {
+        val exactLimit = DocumentArchiveCodec.readBoundedInput(
+            ByteArrayInputStream(byteArrayOf(1, 2, 3)),
+            maxBytes = 3L
+        )
+        assertEquals(3, exactLimit.size)
+
+        val overLimit = runCatching {
+            DocumentArchiveCodec.readBoundedInput(
+                ByteArrayInputStream(byteArrayOf(1, 2, 3, 4)),
+                maxBytes = 3L
+            )
+        }
+        assertTrue(overLimit.exceptionOrNull() is IllegalArgumentException)
+    }
 
     @Test
     fun `v3 archive write and read roundtrip preserves multi-layer tiles checksums and unknown fields`() {

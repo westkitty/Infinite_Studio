@@ -34,7 +34,20 @@
     "headessMediaCodecMp4": "OMITTED_HEADLESS_SANDBOX (Time Canvas looping playback & horizontal PNG sprite sheet export verified)",
     "liveRemoteOpenAiInference": "NOT_EXECUTED (disabled by default; zero paid calls; zero keys in Android client)"
   },
-  "entries": [
+  "recoveryBranch": {
+    "name": "reconcile/restore-original-and-native",
+    "sourceRepairCommit": "3d8420194801b163c6cddb6a9575ae8ced98016c",
+    "qaRun": "https://github.com/westkitty/Infinite_Studio/actions/runs/43820160709",
+    "validation": "37 Android tests and APK build passed; 3 companion tests passed",
+    "branchOnlyAddedFiles": [
+      "app/src/main/java/com/example/features/RecipePixelKernels.kt",
+      "app/src/main/java/com/example/features/RecipePixelOperators.kt",
+      "app/src/test/java/com/example/EngineRepairRegressionTest.kt",
+      ".github/workflows/android-engine-repair.yml"
+    ],
+    "scopeNote": "The original entries[] represent historical RC2 source archives and do not list this recovery branch's additional source files or restored browser baseline. The old ZIP is unmodified."
+  },
+  "historicalRc2Inventory": [
     {
       "path": "build.gradle.kts",
       "role": "build-config",
@@ -516,17 +529,678 @@
       "origin": "generated-doc"
     }
   ],
-  "recoveryBranch": {
-    "name": "reconcile/restore-original-and-native",
-    "sourceRepairCommit": "3d8420194801b163c6cddb6a9575ae8ced98016c",
-    "qaRun": "https://github.com/westkitty/Infinite_Studio/actions/runs/43820160709",
-    "validation": "37 Android tests and APK build passed; 3 companion tests passed",
-    "branchOnlyAddedFiles": [
-      "app/src/main/java/com/example/features/RecipePixelKernels.kt",
-      "app/src/main/java/com/example/features/RecipePixelOperators.kt",
-      "app/src/test/java/com/example/EngineRepairRegressionTest.kt",
-      ".github/workflows/android-engine-repair.yml"
+  "rc3": {
+    "status": "INCOMPLETE_BLOCKED_AND_CANCELED",
+    "sourceBranch": "codex/native-rc3-reproducible",
+    "baseBranch": "reconcile/restore-original-and-native",
+    "baseCommit": "a8a0c2af2b0ef43a81bc95d0984fff370d3661c4",
+    "toolchain": {
+      "jdk": "21.0.13",
+      "gradle": "9.3.1",
+      "androidSdk": 36,
+      "agp": "9.1.1",
+      "kotlin": "2.2.21"
+    },
+    "verification": {
+      "androidCompile": "PASSED (:app:compileDebugKotlin)",
+      "androidTestSourceCompile": "PASSED (:app:compileDebugUnitTestKotlin)",
+      "androidUnitTests": "BLOCKED (nativeruntime-dist-compat:1.0.16 redirected to restricted host gcp.mirrors.maven.org; HTTP 403)",
+      "androidDebugApk": "PASSED (:app:assembleDebug)",
+      "credentialBoundary": "PASSED (manual source and 145-entry APK scan; automated test blocked with Robolectric suite)",
+      "companionTests": "PASSED (3/3 current checkout and 3/3 fresh source extraction)",
+      "sourceZipIntegrity": "PASSED (128 entries; 127 source-manifest entries match recorded sizes and SHA-256)",
+      "freshExtractionAndroidBuild": "CANCELED_BEFORE_COMPLETION",
+      "freshExtractionAndroidTests": "NOT_RUN",
+      "originalSourcePreservation": "PASSED (required SHA-256 and ten browser source files match imported baseline)",
+      "physicalDeviceQa": "NOT_STARTED_NO_DEVICE"
+    },
+    "artifactPathNote": "RC3 source ZIP and artifact manifest are produced outside the repository under /workspace; their checksums are recorded there.",
+    "sourceEntryCount": 127,
+    "implementationChanges": [
+      "Photo Picker encoded input capped at 32 MiB; image placement allocates only intersecting sparse tiles.",
+      ".iastudio codec input capped at 224 MiB; SAF/local-draft stream reads use the bounded codec path."
     ],
-    "scopeNote": "The original entries[] represent historical RC2 source archives and do not list this recovery branch's additional source files or restored browser baseline. The old ZIP is unmodified."
-  }
+    "debugApk": {
+      "bytes": 19587403,
+      "sha256": "9617c9eafd729156f78786a993f77e6341045acff71ecee35c3793908848ca54"
+    }
+  },
+  "entries": [
+    {
+      "path": ".github/workflows/android-engine-repair.yml",
+      "bytes": 1312,
+      "sha256": "e3802408a2cba5cdfa7f7128a7824f85c5fdc9c7eba63f5503e5a36db97de3c9"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 110,
+      "sha256": "8aabee05a737ec06a6c03bf0f8c16258603184fd998045462112b8fa6fd830c1"
+    },
+    {
+      "path": "ARCHITECTURE.md",
+      "bytes": 6205,
+      "sha256": "a133811b361e223dc902845188bc72a47077d9a920a6fa1aff86430775893045"
+    },
+    {
+      "path": "AWE_BRIEF.md",
+      "bytes": 6487,
+      "sha256": "206c4138fc5b52c5eb80f5b84be07313497aaebad405e2e894c681c6b501ffb5"
+    },
+    {
+      "path": "BACKEND_CONTRACT.md",
+      "bytes": 5060,
+      "sha256": "c0fe1d39f50c61ee26637393b1c00dbccefa576fa2ef1696e08a218bb43f05c5"
+    },
+    {
+      "path": "BUILD_STATUS.md",
+      "bytes": 15799,
+      "sha256": "787ba530fefa301b7492904cf5049d5f99505212bcf255c56eee6676504046c3"
+    },
+    {
+      "path": "DEPENDENCIES_LICENSES.md",
+      "bytes": 4021,
+      "sha256": "aea2b8553f8e72437c339242af379779d9cbc65f956879dec5871ae1879a8cc4"
+    },
+    {
+      "path": "DOCUMENT_FORMAT.md",
+      "bytes": 4875,
+      "sha256": "2023a5a2190603c7baf6c69fccc55c8977990a04c580e04c91cc3c943e188074"
+    },
+    {
+      "path": "HANDOFF_FOR_CHATGPT.md",
+      "bytes": 10310,
+      "sha256": "5680f807149e67ffa31ed5f020eb164b4f26083d1c6bbe929fdf1b442565e799"
+    },
+    {
+      "path": "MANIFEST.json",
+      "bytes": 2454,
+      "sha256": "1b5cec3d8c0876df86164d68cbf8361d9bbcb23a9ccd268228f617419b923218"
+    },
+    {
+      "path": "OPERATIONAL_STATE.md",
+      "bytes": 5619,
+      "sha256": "535d1d7ebc0bbdf6ac18567e25901ebeee499278e53a48ece23ccdcbdfd6193c"
+    },
+    {
+      "path": "QA_EVIDENCE.md",
+      "bytes": 12792,
+      "sha256": "f4af207b4771d87ef75b42c8f353bd2c19698f97e422d46be0243f2467b99d10"
+    },
+    {
+      "path": "QA_REPORT.md",
+      "bytes": 3864,
+      "sha256": "0d540a6be5a37abd89043c7aaafe8785ad7b6d01dfcb23065abc3fee1e9ac5a4"
+    },
+    {
+      "path": "README.md",
+      "bytes": 6394,
+      "sha256": "31f347d57084c4a7375c17eb9ae675f0230b87d87c38b07752814cfccf4b7475"
+    },
+    {
+      "path": "REPAIR_QUEUE.md",
+      "bytes": 8363,
+      "sha256": "0d01d02102ddd261e9e1daf90967ba8d69320e8fd9aa8648e02fa84c05a2eed2"
+    },
+    {
+      "path": "REQUIREMENT_TRACEABILITY.md",
+      "bytes": 9512,
+      "sha256": "679d34b8fd562e73537ae62565eef89e4d503bc88919eff48eec74e6f508a577"
+    },
+    {
+      "path": "SECURITY_PRIVACY.md",
+      "bytes": 3920,
+      "sha256": "52d297f3e12fbe0207c47ee2c994638b874a3fc299070d0c074202fcf9483d36"
+    },
+    {
+      "path": "TAB_S9_ULTRA_DEVICE_QA.md",
+      "bytes": 3907,
+      "sha256": "92276b8e9bc0235210994b550edfd7a143bceefb364d647fd06f9b17d40065df"
+    },
+    {
+      "path": "app/build.gradle.kts",
+      "bytes": 2424,
+      "sha256": "982f22da464ccae7f91f6cfda1d27bdf4a7648386c586344afc79c7e6cdf9b85"
+    },
+    {
+      "path": "app/proguard-rules.pro",
+      "bytes": 146,
+      "sha256": "84d638657e80e6fa0d25497e67e2c4bbad6418c14499d02334614ed44c73c31a"
+    },
+    {
+      "path": "app/src/main/AndroidManifest.xml",
+      "bytes": 1415,
+      "sha256": "50dfd3950d3a93d0a6c6330948cf62244a9270621db61ac60cd402f0c4da5c2b"
+    },
+    {
+      "path": "app/src/main/java/com/example/MainActivity.kt",
+      "bytes": 19697,
+      "sha256": "3cc7545f653493375648c9ac6f78e51e13e053b68b9c87e2e957bb4ba29ee5cf"
+    },
+    {
+      "path": "app/src/main/java/com/example/document/DocumentArchiveCodec.kt",
+      "bytes": 22082,
+      "sha256": "5beb0195bdfc6c18ea297aff6dd614a43d59d1e1cac476a3b2d36336826de63d"
+    },
+    {
+      "path": "app/src/main/java/com/example/document/DocumentModels.kt",
+      "bytes": 12135,
+      "sha256": "79cfbf0c42b582f6a4b3bb0b7485559119eb11f29fae3d307e06470f2d028f50"
+    },
+    {
+      "path": "app/src/main/java/com/example/document/SampleProjectFactory.kt",
+      "bytes": 11097,
+      "sha256": "588687c1b27ef1e49d67084aa600d73ff91a94e35c5ac9ada510d54f49e2f050"
+    },
+    {
+      "path": "app/src/main/java/com/example/document/TransactionEngine.kt",
+      "bytes": 4025,
+      "sha256": "3b3796cd6248329afab14d517e7be8cc189c0da8480b58dddbf8b538b026af0b"
+    },
+    {
+      "path": "app/src/main/java/com/example/features/FuturesAndConstraintsEngine.kt",
+      "bytes": 30511,
+      "sha256": "bad6a42d548b19d5ea5ef57f2171f0a8fe8cd9a479e49bf4360410e045af9ef7"
+    },
+    {
+      "path": "app/src/main/java/com/example/features/ObjectSurgeryAndMaterialEngine.kt",
+      "bytes": 23964,
+      "sha256": "97f55b02ccc0e59b57ba3fe2c490a2edb094c26545fb86ef8e998370136b7aeb"
+    },
+    {
+      "path": "app/src/main/java/com/example/features/RecipePixelKernels.kt",
+      "bytes": 4203,
+      "sha256": "2c0fcde74ee06ab39da2443531a7f50ffa34745b26f95e8d8bcfe4e419621841"
+    },
+    {
+      "path": "app/src/main/java/com/example/features/RecipePixelOperators.kt",
+      "bytes": 5283,
+      "sha256": "5e3e9a8a69a41621880640927b50bf583aa5fd246d715a2932558a1e019d7aee"
+    },
+    {
+      "path": "app/src/main/java/com/example/features/TimeAndRecipeEngine.kt",
+      "bytes": 30705,
+      "sha256": "71cdf665aff9918ee8399c4d96caa27fd650ed09268abf7c6de556db0c83c5f1"
+    },
+    {
+      "path": "app/src/main/java/com/example/features/VaultBranchOrchardEngine.kt",
+      "bytes": 31750,
+      "sha256": "9f9a06bb1b37a087d711a0bb46136cf65f5e290ca5bc079749429209f7b6eb1f"
+    },
+    {
+      "path": "app/src/main/java/com/example/features/VectorAndFoundryEngine.kt",
+      "bytes": 26114,
+      "sha256": "692133170cb7be50ebac6735ee8e636a82680341569a940a6c7516d9be1250d3"
+    },
+    {
+      "path": "app/src/main/java/com/example/input/StylusInputRouter.kt",
+      "bytes": 14096,
+      "sha256": "eb2b96048ca30b7fdf7fdbddcc0a85333bab346820fd9cc8b735e4b3a81029d6"
+    },
+    {
+      "path": "app/src/main/java/com/example/model/StudioModels.kt",
+      "bytes": 9710,
+      "sha256": "81409635a8782c1cbc425bf3570a05f03da76a6b7c92493fbc91dbd0ba8b66c5"
+    },
+    {
+      "path": "app/src/main/java/com/example/render/SparseTileRenderer.kt",
+      "bytes": 20275,
+      "sha256": "2f856374eb89a8a04ddc9564845308f25bda2b6f3e05b1801fe5c4b5c3ca562c"
+    },
+    {
+      "path": "app/src/main/java/com/example/services/ProviderRouter.kt",
+      "bytes": 17936,
+      "sha256": "586538dd77b9a516b56c6999026b2c05deec142604f18c544e8d73d78dc68830"
+    },
+    {
+      "path": "app/src/main/java/com/example/storage/ProjectStorageManager.kt",
+      "bytes": 10185,
+      "sha256": "0a0fd81c4f1e1e32b4fb13f9369434919a519dbeb095793e48218cd9977b95f5"
+    },
+    {
+      "path": "app/src/main/java/com/example/tools/TileBrushEngine.kt",
+      "bytes": 31959,
+      "sha256": "44364933c5865538e03eaf8c1f33373fb391be269ffa3a69f2c47c1845e0a596"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/canvas/InfiniteCanvasView.kt",
+      "bytes": 41377,
+      "sha256": "c4687e4dc1bab2aebea63ad3f3125fb36adb5d10e9bb74164b65e7cebbda6e5b"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/BottomToolDock.kt",
+      "bytes": 25129,
+      "sha256": "c10e630e7d58468f4f3976678f52e0d4e6863408ad81d94e3b661fefff4fe7ab"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/BrushStudioDialog.kt",
+      "bytes": 7672,
+      "sha256": "9bd1f371233040297321920c803452e863b5457ec320967a72c5e4be1acc5a88"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/CheckerboardBox.kt",
+      "bytes": 1540,
+      "sha256": "006251582ec0ce23f3f833647a7dd0d717a8eaf9144de1ee5078b0ffa4ab82be"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/ColorStudioPopover.kt",
+      "bytes": 10483,
+      "sha256": "1e7c65a8a75021b25a5a1d9325f578c915243dd0f0f0d147a2cfe5773c0115f5"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/CreativeCommandRing.kt",
+      "bytes": 15174,
+      "sha256": "8b1212e5fae063e2b6388e2e0fc2c6831015e01a8c257dbf1ff1f4b2ff7f06cb"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/DiagnosticsDialog.kt",
+      "bytes": 4796,
+      "sha256": "5d284129c57abcc60b1ce976a611fe24b798f8e7d1f012d4923555109b3c2551"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/ExportDialog.kt",
+      "bytes": 13648,
+      "sha256": "8e8245e546e2734baf80470efcda22ebbd2ec6910d492c37b1bc25e5678752bf"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/FuturesLoomDialog.kt",
+      "bytes": 25853,
+      "sha256": "f947239b9837dc0120e04f6eca76ffcd24b8a6e940efe1ef8b387e8182d41c37"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/FuturesTableDialog.kt",
+      "bytes": 27922,
+      "sha256": "ee370767748c9a26c8ba6386cc02a6a0de12ffddf723944383441ef1964bc27c"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/LayersDrawer.kt",
+      "bytes": 19177,
+      "sha256": "909cac59ad25ee79c4c4d58094216ed24ba39b79f00187f386fc5ca3d9659607"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/LeftBrushDock.kt",
+      "bytes": 8679,
+      "sha256": "dbb802189084c3142b2cd37e54c8d1d53d4d65932c2274f629a5b551acec536a"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/ProjectVaultDialog.kt",
+      "bytes": 14332,
+      "sha256": "04103d70a9231b8c0d7f904d28d9aaaed30c02bba8b7b1291acba683faf7da2c"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/RecipeGraphEditor.kt",
+      "bytes": 18782,
+      "sha256": "e376e3260af19101f3b8d45a95dfc9fdf38213147157c9c23fb63e40d8c27743"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/StudioWorkspaceSheet.kt",
+      "bytes": 21328,
+      "sha256": "33802d42896ad102cff0ffb910ec9b930b65f1d209795e5a5edfd65cff0f3288"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/StudioWorkspaceTabsExt.kt",
+      "bytes": 30588,
+      "sha256": "37ced3b8244974c17ffebca9cfb9269b3321406ad2e88e5b098adc9f047bb821"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/components/TopControlBar.kt",
+      "bytes": 23576,
+      "sha256": "c34d0a66dcffaa7e469ec6531d0c54813049f10cf1873889a299b92de737e536"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/theme/Color.kt",
+      "bytes": 1414,
+      "sha256": "934148e4470ff66cb5803fdc1e2aa934830c579ea064e50149568a5a12fe1c1a"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/theme/Theme.kt",
+      "bytes": 1073,
+      "sha256": "654c4b2044e6e7761f322a44b271075bf8b83029242f91651b16abbe53d59ef8"
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/theme/Type.kt",
+      "bytes": 2179,
+      "sha256": "44d3138264f1d3fc3686c1f32534e1782edac9862c60337cb46b5a88f007db66"
+    },
+    {
+      "path": "app/src/main/java/com/example/viewmodel/StudioViewModel.kt",
+      "bytes": 89638,
+      "sha256": "fbda48d87506c53f1e58919b9c4bf881209e2a3ae735be421697f7dec08dcc6b"
+    },
+    {
+      "path": "app/src/main/res/drawable/ic_launcher_background.xml",
+      "bytes": 179,
+      "sha256": "0b1cc6408130971860cb7e51503612237ccb700a3f4ec0f2ec526ea957ec11a4"
+    },
+    {
+      "path": "app/src/main/res/drawable/ic_launcher_foreground.xml",
+      "bytes": 300,
+      "sha256": "bd345ef85839fcaafb035e11c3b911198b836a52cb15c645bb84bbd830f4fe88"
+    },
+    {
+      "path": "app/src/main/res/drawable/ic_studio_launcher_1794797719546.jpg",
+      "bytes": 348916,
+      "sha256": "cc17a7d82a195c6e6a18676e461b332d41b3e230689539d82e940f36d2ec61bf"
+    },
+    {
+      "path": "app/src/main/res/font/inter.ttf",
+      "bytes": 66592,
+      "sha256": "db2007cac3f58427030755b0ff368cceef98dc503cf6d3d2aa366a4743f9749f"
+    },
+    {
+      "path": "app/src/main/res/font/jetbrains_mono.ttf",
+      "bytes": 57404,
+      "sha256": "a187c78346862e42584d87a3b9d681b4f76860e8ccf0227ac970b1ccdc9df25c"
+    },
+    {
+      "path": "app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
+      "bytes": 273,
+      "sha256": "1c832bf194d8eecd439a92bcced0df144c9f566b934b3d7865e983d8ee8dbdeb"
+    },
+    {
+      "path": "app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml",
+      "bytes": 273,
+      "sha256": "1c832bf194d8eecd439a92bcced0df144c9f566b934b3d7865e983d8ee8dbdeb"
+    },
+    {
+      "path": "app/src/main/res/mipmap-hdpi/ic_launcher.png",
+      "bytes": 9256,
+      "sha256": "074cb3b601a1bb6f0eeac431bb43c3653253b7e376114552363da7c7115c3d35"
+    },
+    {
+      "path": "app/src/main/res/mipmap-hdpi/ic_launcher_round.png",
+      "bytes": 9463,
+      "sha256": "c66ece56431242ef887ca593843466e30aa379a43d38136a4a758bba6698de20"
+    },
+    {
+      "path": "app/src/main/res/mipmap-mdpi/ic_launcher.png",
+      "bytes": 7052,
+      "sha256": "f932ab07faf948546a305c433070b586ef30da875fa80caac2d2da97a7788b8b"
+    },
+    {
+      "path": "app/src/main/res/mipmap-mdpi/ic_launcher_round.png",
+      "bytes": 7258,
+      "sha256": "ea4f3da9550292d37f25c6ee63659355d823cd76e74f65a227232c7297788e35"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xhdpi/ic_launcher.png",
+      "bytes": 12195,
+      "sha256": "3741146db7b66fdc1567aea2a22f60afd701209baa5f01a7144e1a7e242f45d6"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xhdpi/ic_launcher_round.png",
+      "bytes": 12449,
+      "sha256": "a1fc63b915a8ca7aa32e06e311ed90612e179ada4ce8e3fdab988585120eef2f"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+      "bytes": 20245,
+      "sha256": "1de1a2bbbf3fee3524e931f1e6a84c2460ff338d4ebe07c88df00fe279979bd3"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png",
+      "bytes": 20143,
+      "sha256": "37b1796bbd64b6938e5811b0ee2a1c67444fd31cd48b0bebc46db61b12e68b0b"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "bytes": 32257,
+      "sha256": "5c5ea032cd27d07d1b8a5085aa638379ed7ad9e666324817819cacf5337f2fc1"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png",
+      "bytes": 31189,
+      "sha256": "525e9c24d6e982e6edc4426c2a5355326c05dfa78b4ccc74ba8d2870c17f1de1"
+    },
+    {
+      "path": "app/src/main/res/values/strings.xml",
+      "bytes": 760,
+      "sha256": "14af0d31a53c1e92727664a742607be7b3a6f9c6e0ed217d84e82f6f188b3667"
+    },
+    {
+      "path": "app/src/main/res/values/themes.xml",
+      "bytes": 235,
+      "sha256": "e03ffd4effb759a26b909b401a216b0b9ec896a977b9dc00effd1e5cf997c5ac"
+    },
+    {
+      "path": "app/src/main/res/xml/file_paths.xml",
+      "bytes": 113,
+      "sha256": "5ceae479c601a16689c1788d029a4a1058fc8de28df905870faab1ad1acccd79"
+    },
+    {
+      "path": "app/src/test/java/com/example/CredentialBoundaryAndBuildArtifactTest.kt",
+      "bytes": 7214,
+      "sha256": "a6957d24c3936759541572488221b147b7fc67d05aa179fb17ede0270c7aac16"
+    },
+    {
+      "path": "app/src/test/java/com/example/DocumentAndArchiveTests.kt",
+      "bytes": 9746,
+      "sha256": "e2a3cbcbe5b7f1f64e9ba1b0c4a189597fdfa84a8622b3ac899215c94ef33398"
+    },
+    {
+      "path": "app/src/test/java/com/example/EndToEndJourneysTest.kt",
+      "bytes": 12853,
+      "sha256": "6befb17bd82f5480e742908067072acc7f913cd79f9938270cbac9f2da6462fb"
+    },
+    {
+      "path": "app/src/test/java/com/example/EngineRepairRegressionTest.kt",
+      "bytes": 9154,
+      "sha256": "1cb8934f3affd380cbacb2181df94772fdb68f331b5b8fcea7378b52618f6939"
+    },
+    {
+      "path": "app/src/test/java/com/example/LivingWorkshopTest.kt",
+      "bytes": 23991,
+      "sha256": "23b399b3a03d9e973191c21ba3fcd05efb2012572a3bd3c00e0f85c4df50efb7"
+    },
+    {
+      "path": "app/src/test/java/com/example/ProviderAndBranchesTest.kt",
+      "bytes": 5659,
+      "sha256": "da0114b65a0d84d1d8fe7194fea38912f535b84664f48d0f39ed058b5dba5d99"
+    },
+    {
+      "path": "app/src/test/java/com/example/StylusAndTileRendererTests.kt",
+      "bytes": 6097,
+      "sha256": "e9c7e5ae62cb9e72c8885d025d2f886f4f37888c2a3e6412e2df6801bca407ec"
+    },
+    {
+      "path": "app/src/test/java/com/example/UiFlowsRobolectricTest.kt",
+      "bytes": 5799,
+      "sha256": "12ab7808c2983f49b759d436f94df6607d40abc054d130236d1592c6a0973dd1"
+    },
+    {
+      "path": "app/src/test/java/com/example/WorkspaceAdvancedSystemsTest.kt",
+      "bytes": 15560,
+      "sha256": "5c8dba2651d8981a38ee98f3e55cae33488cf14947cf1011b1fc784860bbe8ac"
+    },
+    {
+      "path": "build.gradle.kts",
+      "bytes": 176,
+      "sha256": "2afa298ed4cca24c808051bbb6a6a7cbe9f32ddcf191efd0dbe7043e8aa81238"
+    },
+    {
+      "path": "build.py",
+      "bytes": 7270,
+      "sha256": "f5251d65ed8a43ee99b2ec1254b918833da94b161d96389e93ec44bdd9f44287"
+    },
+    {
+      "path": "companion/.env.example",
+      "bytes": 495,
+      "sha256": "4690380408980ac56d2055fe4ee862bf4b92c061f05b44342901c3c6fc4f2307"
+    },
+    {
+      "path": "companion/README.md",
+      "bytes": 1614,
+      "sha256": "bad7e5e7a76a082f5092fe569f1d0a685e6b5bf8ad0f886c23a4758dd1b2497c"
+    },
+    {
+      "path": "companion/server.py",
+      "bytes": 20916,
+      "sha256": "d79459586f4e85fc0f2631821a33f174168a947ba864581df457b2bbf53df055"
+    },
+    {
+      "path": "companion/test_companion.py",
+      "bytes": 6254,
+      "sha256": "a01bcaf84a54946f766dfdbdfa90633f64ff0b5531fcd1e358fd560cc104fd90"
+    },
+    {
+      "path": "docs/ARENA_CONNECT.md",
+      "bytes": 1185,
+      "sha256": "30c3be5634a408bcaead7c41877c67c7f1b5c01c0c81f152f4aeac49c68673d9"
+    },
+    {
+      "path": "docs/BASELINE_CONTENTS.json",
+      "bytes": 1271,
+      "sha256": "975ed9d20322efa211bd7c0345564b25000435f8a59298465c8f1a383406c820"
+    },
+    {
+      "path": "docs/BASELINE_TEST_RESULTS.md",
+      "bytes": 1180,
+      "sha256": "f67599a4295f9f7b2f88137be0f04490957358e73a0766675cfbbc98ec94f554"
+    },
+    {
+      "path": "docs/GOOGLE_AI_STUDIO_NATIVE_FULL_BUILD_CONTRACT_v3.md",
+      "bytes": 35160,
+      "sha256": "9dcaf2230852d253e8a3b1f766c3bfb67feff2aa292845dde715c9d56aa49bda"
+    },
+    {
+      "path": "docs/LM_ARENA_MASTER_BUILD_PROMPT.txt",
+      "bytes": 16895,
+      "sha256": "c53719c488a14b1a99e83729c9ba1407758044a1f2054baddfd1f7d2b4674ba5"
+    },
+    {
+      "path": "docs/SOURCE_CHECKSUMS.sha256",
+      "bytes": 1507,
+      "sha256": "caf766a932684f1bb552b06d4ca53000e79f9fb641f551e36f440d07160e4836"
+    },
+    {
+      "path": "docs/SOURCE_PROVENANCE.md",
+      "bytes": 1348,
+      "sha256": "b54a0bbbed5192d9c99230a34cdd458f0f5a318317b2601382a20af7d8c95ee8"
+    },
+    {
+      "path": "docs/UPLOAD_INSTRUCTIONS.md",
+      "bytes": 1772,
+      "sha256": "41c7d9e4c2e024724b80ed35955d35c3ff5e17db3e34c8cdb55a3cfc791f0238"
+    },
+    {
+      "path": "gradle.properties",
+      "bytes": 136,
+      "sha256": "678c35a27eeda302d6a960484179d118d08fb1edf05c1b40745bc7aed6e88f03"
+    },
+    {
+      "path": "gradle/libs.versions.toml",
+      "bytes": 2721,
+      "sha256": "8ec0ce14cdfd194a6ae45f03834a1a851376ef3116f6721eb915299969835475"
+    },
+    {
+      "path": "index.html",
+      "bytes": 206126,
+      "sha256": "e632529fa866ccd318386c07ecc2eace449132a51d628cf4ba95209aa4649722"
+    },
+    {
+      "path": "laboratory.css",
+      "bytes": 6128,
+      "sha256": "f4342e999a697b69a00d678f04f8a7df89e27b1b0585a8c4870a3c3c7f0201c9"
+    },
+    {
+      "path": "laboratory.js",
+      "bytes": 24268,
+      "sha256": "4ee7a2fd3940bbdad2395459ab2cfe6939d571e9f86b01278fcfaece2118150b"
+    },
+    {
+      "path": "laboratory.ui.html",
+      "bytes": 4512,
+      "sha256": "1404d4de0cc76436c694075070ce3442d2a12aa86e646b24b70fdfd6c0fa7ba5"
+    },
+    {
+      "path": "legacy/BUILD_STATUS_BROWSER_BASELINE.md",
+      "bytes": 2521,
+      "sha256": "87fb6d1d1156c3efaee437fdbe20b40475cc8a1ba7229cd3e24221929b1948f2"
+    },
+    {
+      "path": "legacy/README_BROWSER_BASELINE.md",
+      "bytes": 6598,
+      "sha256": "b8c2762e8d6b5b32118964bf91ea7f5efcdf3c1e2d51d7f24bf29fc2ac9f506f"
+    },
+    {
+      "path": "metadata.json",
+      "bytes": 298,
+      "sha256": "428e9bd22664cda2b776e66ddd98439743b7b68056346a634ffdba8d0826d0ee"
+    },
+    {
+      "path": "original_source.html",
+      "bytes": 114419,
+      "sha256": "0e1497037505c011d7837874f5a277c5b65cc030161e36fc33102218f9970b76"
+    },
+    {
+      "path": "schema/iastudio-v3.schema.json",
+      "bytes": 3743,
+      "sha256": "4169dc5d6cfdf13b28fa00610c712bb045726d627e8f43df69fc16b387483cf7"
+    },
+    {
+      "path": "schema/openapi.json",
+      "bytes": 7843,
+      "sha256": "4a90cf1ef18e75c32c6b2836e598f0a1647e7c2f37d0d0c397055961acf8945f"
+    },
+    {
+      "path": "schema/sample-job-request.json",
+      "bytes": 579,
+      "sha256": "f9c78b9aabecafb83e535e10b541727f4f05c5058af0d6bffa9ce7535b02d532"
+    },
+    {
+      "path": "schema/sample-job-response.json",
+      "bytes": 729,
+      "sha256": "2fee4d96576ee483cd22f41790a7948c83bfca9c3fe0d02e05d26b325c9c7522"
+    },
+    {
+      "path": "schema/sample-manifest.json",
+      "bytes": 3661,
+      "sha256": "9e4279170e5c3782910c94f015abd95e265d0eed8aff0617e530c6175ae283aa"
+    },
+    {
+      "path": "server.py",
+      "bytes": 8524,
+      "sha256": "5f4b2796c44bffd7a979a4d7a111f7dbb2c68abea0df9a9a11a3665cf93a32db"
+    },
+    {
+      "path": "settings.gradle.kts",
+      "bytes": 539,
+      "sha256": "58d9cd5595fdd0f0f053f9a14dd5092eb885a842dae4728ca2192ae5663bb64b"
+    },
+    {
+      "path": "studio_futures.png",
+      "bytes": 157045,
+      "sha256": "28a92652573a7d3bf8588f628c1cb259db1973fe133b9fe59484471c6173e9b0"
+    },
+    {
+      "path": "studio_home.png",
+      "bytes": 71423,
+      "sha256": "b663b1fdaa1ca60ccfe4bf3c82c516280fef7e9fe3d2aa90a1ac6bc726f6efe1"
+    },
+    {
+      "path": "studio_phone_preview.png",
+      "bytes": 65014,
+      "sha256": "f7877e4eab8fcbcb5d0eac908f20ba4fa4d407a85d930f3551f9ffdb3b1472a4"
+    },
+    {
+      "path": "studio_tablet_portrait.png",
+      "bytes": 132944,
+      "sha256": "1eae22f77460ccdf2eeb05843f4f58b5661f5f21f0019f72494dd85dec873eb7"
+    },
+    {
+      "path": "tests/run_browser_smoke.py",
+      "bytes": 4497,
+      "sha256": "12591d9c704d43a2cb52720ccb7356937eca602a8bf7ef15ff448d999a0075c9"
+    },
+    {
+      "path": "tests/run_extra_browser_checks.py",
+      "bytes": 2157,
+      "sha256": "d8599ddf07e5b7244e426580091095b70fcf105b44cf6961921a25f5793a54bb"
+    },
+    {
+      "path": "tests/test_backend.py",
+      "bytes": 4843,
+      "sha256": "629b439e8a7dbaab4416cc823f7c5184b978cb6b6dba5e2c6dda457aaf983129"
+    }
+  ],
+  "manifestSelfHashNote": "SOURCE_MANIFEST.json is included in the archive but omitted from entries to avoid a self-referential checksum; its actual hash is recorded in RC3_ARTIFACT_MANIFEST.json."
 }

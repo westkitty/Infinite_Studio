@@ -1,3 +1,26 @@
+# RC3 handoff — 2026-11-17 (verification incomplete)
+
+## Current branch and evidence
+
+- Working branch: `codex/native-rc3-reproducible`, based on verified recovery branch HEAD `a8a0c2af2b0ef43a81bc95d0984fff370d3661c4`. `main` was not modified.
+- `original_source.html` retains SHA-256 `0e1497037505c011d7837874f5a277c5b65cc030161e36fc33102218f9970b76`; the ten browser source files match the imported baseline tree.
+- JDK 21.0.13, Gradle 9.3.1, SDK 36, AGP 9.1.1, and Kotlin 2.2.21 were used. App Kotlin compilation, debug APK assembly, test-source compilation, companion tests (3/3), and a manual source/APK credential scan passed.
+- Android unit tests are `BLOCKED`: `nativeruntime-dist-compat:1.0.16` resolves to `gcp.mirrors.maven.org`, which this restricted environment denies with HTTP 403. The environment draft adds that host but requires user save/publish before retry.
+- RC3 is **incomplete** until Android tests pass and a fresh extraction is independently built and tested. Physical device, S-Pen, MediaCodec, and USB `adb reverse` checks remain unrun.
+
+## Build and device instructions
+
+After publishing the environment draft, rerun from the repository root:
+
+```bash
+gradle --no-daemon --console plain :app:testDebugUnitTest :app:assembleDebug
+python3 -m unittest discover -s companion -p "test_*.py" -v
+```
+
+On a fresh machine, install the JDK/Gradle/SDK versions in the source manifest, set `ANDROID_SDK_ROOT`, and generate a local throwaway `debug.keystore` before assembly. Do not include that key in source archives.
+
+For Galaxy Tab S9 Ultra device QA, install the APK with `adb install -r app/build/outputs/apk/debug/app-debug.apk`, then execute `D01`–`D09` in `TAB_S9_ULTRA_DEVICE_QA.md`. Record S-Pen pressure/tilt, palm rejection, hover, frame pacing, SAF/Photo Picker interaction, and USB companion transport as device-only checks; do not claim them from Robolectric. The app defaults to offline-local mode; keep paid inference disabled.
+
 # Handoff for Independent Audit & Repair (`HANDOFF_FOR_CHATGPT.md`)
 
 ## 1. Project Identity & Baseline Context
@@ -8,7 +31,7 @@
 - **Portable Delivery Artifacts:**
   - Rebuilt Debug APK: `app/build/outputs/apk/debug/app-debug.apk` (`19,741,870` bytes, SHA-256 `e7332d0709a627cb6431d30be05a93af6ced442edd64ba1e56dbc9bf4aec3d1c`)
   - Preserved Baseline Archive (Untouched): `Infinite_Studio_Native_Android_RC.zip` (`766,758` bytes, SHA-256 `94b0a22368e7401c7425c83bac33162de19fe3287016660934b53cc2fe70808d`)
-  - Living Workshop Uplift Source Archive: `Infinite_Studio_Native_Android_Uplift_RC2.zip` (96 files matching `SOURCE_MANIFEST.json`, verified via clean extraction build & test in `/tmp/rc2_verify`)
+  - Living Workshop Uplift Source Archive: `Infinite_Studio_Native_Android_Uplift_RC2.zip` (historically verified as 96 files; its preserved inventory is in `SOURCE_MANIFEST.json` → `historicalRc2Inventory`)
 
 ---
 
@@ -55,7 +78,7 @@ The AI Studio cloud build sandbox has **no ADB bridge and no interactive emulato
 ---
 
 ## 3. Recommended Independent Verification Order
-1. Extract `Infinite_Studio_Native_Android_Uplift_RC2.zip` into a clean directory, verify the 96 entries against `SOURCE_MANIFEST.json`, confirm zero `.env*` or secrets, and run `gradle :app:testDebugUnitTest assembleDebug` (`32/32`) plus `python3 -m unittest discover -s companion -p "test_*.py" -v` (`3/3`).
+1. Extract `Infinite_Studio_Native_Android_Uplift_RC2.zip` into a clean directory, verify its historical 96-entry inventory in `SOURCE_MANIFEST.json` → `historicalRc2Inventory`, confirm no embedded secrets, and run the documented build/tests.
 2. Inspect `LivingWorkshopTest.kt`, `EndToEndJourneysTest.kt`, `UiFlowsRobolectricTest.kt`, and `CredentialBoundaryAndBuildArtifactTest.kt`.
 3. Install `app/build/outputs/apk/debug/app-debug.apk` on a physical Samsung Galaxy Tab S9 Ultra and execute `TAB_S9_ULTRA_DEVICE_QA.md` (`D01`–`D09`) with `dumpsys gfxinfo framestats`.
 

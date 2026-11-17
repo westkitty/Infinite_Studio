@@ -1,3 +1,10 @@
+# RC3 review queue — 2026-11-17
+
+- **`RC3-VERIFY-01` Android suite and clean-extraction gate (`BLOCKED`)**: Robolectric runtime resolution redirects `nativeruntime-dist-compat:1.0.16` to `gcp.mirrors.maven.org`, denied by the current restricted egress policy. Save/publish the onboarding draft's single-host addition, rerun the exact Android test/build command, then extract the source ZIP and independently run tests/build. Do not mark RC3 verified until both pass.
+- **`RC3-IMPORT-01` Full-canvas photo import allocation (`IMPLEMENTED_UNVERIFIED`)**: the former import path allocated an ARGB bitmap at the full document size (up to 16,384×16,384). It now bounds encoded input to 32 MiB and rasterizes only intersecting sparse tiles. A maximum-canvas cross-tile regression test compiles but awaits Robolectric execution after the network rule applies.
+- **`RC3-IMPORT-02` Unbounded project input buffering (`IMPLEMENTED_UNVERIFIED`)**: `.iastudio` SAF/local-draft streams previously used unbounded `readBytes()` before archive validation. The codec now enforces a 224 MiB compressed-input ceiling, while preserving its 192 MiB decompressed-content cap. A stream byte-limit regression test compiles but awaits Robolectric execution.
+- **`RC3-DEVICE-01` Physical device validation (`NOT_STARTED`)**: run Tab S9 Ultra checklist `D01`–`D09`, including S-Pen, palm behavior, frame pacing, system picker, hardware MP4, and USB `adb reverse`; do not infer results from headless tests.
+
 # Repair Queue — Infinite Studio Native Android (Living Workshop Uplift)
 
 Ranked status of closed Living Workshop uplift tasks, remaining environment-blocked hardware/emulator verifications, and incremental future work for `HANDOFF_FOR_CHATGPT.md`.

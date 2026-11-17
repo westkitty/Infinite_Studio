@@ -1,3 +1,14 @@
+# RC3 checkpoint — 2026-11-17
+
+Current state is `BLOCKED` pending full Android tests and independent clean-extraction tests. `codex/native-rc3-reproducible` is based on fetched recovery commit `a8a0c2af2b0ef43a81bc95d0984fff370d3661c4`.
+
+- `VERIFIED`: JDK 21.0.13, Gradle 9.3.1, SDK 36; app Kotlin compile; debug APK assembly; companion tests 3/3; manual credential-boundary source/APK scan.
+- `IMPLEMENTED_UNVERIFIED`: 32 MiB Photo Picker input cap and sparse-tile placement on canvases up to 16,384×16,384; 224 MiB `.iastudio` input cap for SAF/local-draft reads; added cross-tile and stream-limit regression tests, with unit-test source compilation passed.
+- `BLOCKED`: Robolectric test execution. Maven Central's Robolectric runtime artifact is redirected to `gcp.mirrors.maven.org`, blocked by this environment's current restricted egress policy (HTTP 403). A draft adding this host is saved but not yet applied/published.
+- `CANCELED / NOT_VERIFIED`: clean-extraction Gradle build was interrupted before completion; the extracted companion suite passed 3/3. Physical device checks are `NOT_STARTED`.
+
+The current APK is 19,587,403 bytes, SHA-256 `9617c9eafd729156f78786a993f77e6341045acff71ecee35c3793908848ca54`. Do not call RC3 complete until the blocked tests and fresh-extraction validation pass.
+
 # Build Status — Infinite Studio Native Android (Living Workshop Uplift)
 
 **Date:** 2026-11-15  

@@ -1,5 +1,15 @@
 # Operational State - Infinite Studio
 
+## RC3 engineering checkpoint — 2026-11-17
+
+- **Working source branch:** `codex/native-rc3-reproducible`, based on fetched recovery-branch HEAD `a8a0c2af2b0ef43a81bc95d0984fff370d3661c4`. `main` was not checked out or modified. The protected recovery branch and original browser files remain unchanged.
+- **VERIFIED:** Git identity and read access; JDK 21.0.13, Gradle 9.3.1, AGP 9.1.1, Kotlin 2.2.21, and Android SDK 36; current app Kotlin compilation; debug APK assembly; 3/3 companion tests; manual source and APK credential-boundary scan (145 APK entries); `original_source.html` SHA-256 matches the protected value. The ten browser source files match the verified imported baseline commit byte-for-byte.
+- **IMPLEMENTED_UNVERIFIED:** Photo Picker import now caps encoded input at 32 MiB and writes only intersecting sparse tiles rather than allocating a document-sized bitmap. `.iastudio` reads now cap compressed input at 224 MiB and route SAF/local-draft reads through the bounded codec stream path. Maximum-canvas cross-tile and input-boundary regression tests compile but await Robolectric execution.
+- **BLOCKED:** Android unit-test execution. The required Robolectric artifact `org.robolectric:nativeruntime-dist-compat:1.0.16` redirects to `gcp.mirrors.maven.org`, which the current restricted network policy blocks with HTTP 403. A draft adding that single host and saving reproducible tool setup was saved; the environment-settings change must be saved and published before retrying.
+- **CANCELED / NOT VERIFIED:** Clean-extraction Gradle build was interrupted before completion; Android tests were not run there. The source ZIP integrity and extracted companion tests (3/3) passed. The earlier GitHub Actions run is historical evidence, not current-branch verification.
+- **RC3 status:** Incomplete until the Android suite passes and a fresh extraction is independently built and tested. Do not describe this checkpoint as a successful release candidate.
+- **NOT_STARTED / device blocked:** Physical Tab S9 Ultra, S-Pen and palm behavior, 120 Hz pacing, Android system picker tap-through, hardware MediaCodec MP4, and physical USB `adb reverse`.
+
 ## Current operational checkpoint — 2026-11-16, revision 2
 
 - Repository: `westkitty/Infinite_Studio`; protected working branch `reconcile/restore-original-and-native` with all ten historical source files restored and native Android implementation intact. `main` remains at `db230c8` and has not been modified by these repairs.

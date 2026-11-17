@@ -21,14 +21,18 @@ Native Kotlin + Jetpack Compose + Material 3 creative studio engineered for **Sa
 
 ## Setup, Build & Test
 
+### RC3 checkpoint (2026-11-17)
+The active engineering branch is `codex/native-rc3-reproducible`, based on the recovery branch. App Kotlin compilation, debug APK assembly, test-source compilation, and the 3 Python companion tests passed locally. Android unit-test execution is currently blocked because Maven Central redirects one Robolectric artifact to a host not yet allowed by the restricted cloud network. The draft network fix is saved for environment settings; RC3 remains incomplete until the Android suite and a fresh-extraction build/test pass. See `QA_EVIDENCE.md` and `OPERATIONAL_STATE.md` for observed results.
+
+Current storage hardening caps Photo Picker input at 32 MiB and places its pixels only in sparse intersecting tiles. `.iastudio` URI/local-draft reads are capped at 224 MiB compressed input and 192 MiB uncompressed content.
+
 ### Android App
 ```bash
-# Compile debug APK cleanly (always use system gradle; do not use ./gradlew)
-gradle assembleDebug
-
-# Execute local Robolectric SDK 35 + Native Graphics unit, UI, & credential-boundary suite (37/37)
-gradle :app:testDebugUnitTest
+# Always use system gradle; do not use ./gradlew.
+gradle --no-daemon --console plain :app:testDebugUnitTest :app:assembleDebug
 ```
+
+Use JDK 21, Android SDK 36, and Gradle 9.3.1. On a fresh checkout, generate a local throwaway `debug.keystore` before APK assembly; never include it in a source archive. Full environment setup and proxy instructions are in `HANDOFF_FOR_CHATGPT.md`.
 
 ### Offline Sample Project
 Open **Project Vault** (folder icon in top bar) -> tap **Load Offline Sample (One Mark, Three Futures)** -> confirm to inspect a full multi-layer canvas with Futures study, protected constraint, vector speech balloon, material pass, branch fork, recipe results, and timeline frames.

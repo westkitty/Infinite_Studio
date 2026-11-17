@@ -1,3 +1,23 @@
+# RC3 local verification checkpoint — 2026-11-17
+
+| Check | Status | Evidence |
+|---|---|---|
+| Repository identity / base branch | `VERIFIED` | `origin` is `westkitty/Infinite_Studio`; fetched `reconcile/restore-original-and-native` resolves to `a8a0c2af2b0ef43a81bc95d0984fff370d3661c4`; working branch is `codex/native-rc3-reproducible`. |
+| Original browser source preservation | `VERIFIED` | `original_source.html` SHA-256 is `0e1497037505c011d7837874f5a277c5b65cc030161e36fc33102218f9970b76`; all ten source files from import commit `242534065f7035f57a44bb400cb30bc2cd74387d` have no diff on the recovery branch. |
+| Toolchain | `VERIFIED` | JDK 21.0.13, Gradle 9.3.1, Android SDK 36, AGP 9.1.1, Kotlin 2.2.21. Gradle network used the managed HTTPS proxy and system Java trust store with certificate checks enabled. |
+| App Kotlin compilation | `VERIFIED` | `:app:compileDebugKotlin` passed after the sparse photo-import repair. |
+| Debug APK assembly | `VERIFIED` | `:app:assembleDebug` passed after the import-boundary repairs. APK is 19,587,403 bytes; SHA-256 `9617c9eafd729156f78786a993f77e6341045acff71ecee35c3793908848ca54`. |
+| Android test-source compilation | `VERIFIED` | `:app:compileDebugUnitTestKotlin` passed, including the new max-canvas sparse import regression test. |
+| Android unit-test execution | `BLOCKED` | `:app:testDebugUnitTest` did not start tests because `nativeruntime-dist-compat:1.0.16` redirected to `gcp.mirrors.maven.org`, which returned HTTP 403 under the current restricted egress policy. No Android test result is claimed for this run. |
+| Credential boundary | `VERIFIED` *(manual artifact scan)* | No root `.env` or `.env.example`; source and Gradle credential tokens absent; scanned 145 APK entries and found no `.env`, `api.openai.com`, or `OPENAI_API_KEY`. The automated Robolectric credential-boundary test remains unexecuted with the suite. |
+| Companion tests | `VERIFIED` | `python3 -m unittest discover -s companion -p 'test_*.py' -v`: 3/3 passed. |
+| Photo/archive import bounds | `IMPLEMENTED_UNVERIFIED` | Photo Picker encoded input is capped at 32 MiB and rasterizes only occupied tiles; `.iastudio` stream input is capped at 224 MiB for SAF/local-draft reads. Cross-tile and byte-boundary test sources compile but runtime execution is blocked with the Android suite. |
+| RC3 source ZIP integrity | `VERIFIED` | 128 unique entries; all 127 source-manifest entries matched their recorded size and SHA-256. The extracted companion suite passed 3/3. |
+| Fresh-extraction Android compile/build and tests | `CANCELED / NOT_VERIFIED` | The extracted Gradle build was canceled by the user before completion. Android tests were not run in that extraction. |
+| Device-specific checks | `NOT_STARTED` | No physical tablet, interactive emulator, or ADB bridge is exposed. |
+
+The prior successful GitHub Actions run `43820160709` remains historical evidence for the recovery branch and does not replace these RC3 checks.
+
 # QA Evidence — Infinite Studio Native Android (Living Workshop Uplift)
 
 **Date:** 2026-11-15  

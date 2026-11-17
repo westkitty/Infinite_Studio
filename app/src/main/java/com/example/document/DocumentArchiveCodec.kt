@@ -2,6 +2,8 @@ package com.example.document
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.RectF
 import android.util.Base64
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -20,6 +22,7 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import kotlin.math.ceil
+import kotlin.math.floor
 import kotlin.math.min
 
 /**
@@ -36,6 +39,7 @@ import kotlin.math.min
 object DocumentArchiveCodec {
     const val MAX_SUPPORTED_SCHEMA_VERSION = 3
     const val MAX_ARCHIVE_UNCOMPRESSED_BYTES = 192L * 1024L * 1024L
+    const val MAX_ARCHIVE_INPUT_BYTES = 224L * 1024L * 1024L
     const val MAX_ARCHIVE_ENTRIES = 8192
 
     private val json = Json {
@@ -196,6 +200,9 @@ object DocumentArchiveCodec {
 
     fun readDocument(bytes: ByteArray): Result<CanonicalDocument> {
         return runCatching {
+            require(bytes.size.toLong() <= MAX_ARCHIVE_INPUT_BYTES) {
+                "Project file exceeds the compressed input limit."
+            }
             require(bytes.size >= 4) { "Project file is empty or truncated." }
             // Check ZIP magic bytes PK\x03\x04
             if (bytes[0] == 0x50.toByte() && bytes[1] == 0x4B.toByte()) {
@@ -208,8 +215,24 @@ object DocumentArchiveCodec {
     }
 
     fun readDocument(inputStream: InputStream): Result<CanonicalDocument> {
-        val raw = inputStream.readBytes()
-        return readDocument(raw)
+        return runCatching {
+            readDocument(readBoundedInput(inputStream, MAX_ARCHIVE_INPUT_BYTES)).getOrThrow()
+        }
+    }
+
+    internal fun readBoundedInput(inputStream: InputStream, maxBytes: Long): ByteArray {
+        require(maxBytes >= 0L)
+        val output = ByteArrayOutputStream()
+        val buffer = ByteArray(8192)
+        var total = 0L
+        while (true) {
+            val count = inputStream.read(buffer)
+            if (count < 0) break
+            total += count
+            require(total <= maxBytes) { "Project file exceeds the compressed input limit." }
+            output.write(buffer, 0, count)
+        }
+        return output.toByteArray()
     }
 
     private fun readZipArchive(inputStream: InputStream): CanonicalDocument {
@@ -417,6 +440,63 @@ object DocumentArchiveCodec {
             }
         }
         return out
+    }
+
+    /**
+     * Rasterizes a bounded source bitmap at a document-local position without allocating a
+     * document-sized intermediate bitmap. Only tiles intersecting [destination] are allocated.
+     */
+    fun rasterBitmapToSparseTiles(
+        bitmap: Bitmap,
+        destination: RectF,
+        bounds: DocumentBounds,
+        tileSize: Int = DEFAULT_TILE_SIZE
+    ): Map<String, ByteArray> {
+        require(tileSize > 0)
+        val clipped = RectF(
+            destination.left.coerceAtLeast(0f),
+            destination.top.coerceAtLeast(0f),
+            destination.right.coerceAtMost(bounds.width.toFloat()),
+            destination.bottom.coerceAtMost(bounds.height.toFloat())
+        )
+        if (clipped.isEmpty) return emptyMap()
+
+        val txStart = floor(clipped.left / tileSize).toInt()
+        val tyStart = floor(clipped.top / tileSize).toInt()
+        val txEnd = ceil(clipped.right / tileSize).toInt() - 1
+        val tyEnd = ceil(clipped.bottom / tileSize).toInt() - 1
+        val result = LinkedHashMap<String, ByteArray>()
+        val pixels = IntArray(tileSize * tileSize)
+
+        for (ty in tyStart..tyEnd) {
+            for (tx in txStart..txEnd) {
+                val tileLeft = tx * tileSize.toFloat()
+                val tileTop = ty * tileSize.toFloat()
+                val tile = Bitmap.createBitmap(tileSize, tileSize, Bitmap.Config.ARGB_8888)
+                try {
+                    Canvas(tile).drawBitmap(
+                        bitmap,
+                        null,
+                        RectF(
+                            destination.left - tileLeft,
+                            destination.top - tileTop,
+                            destination.right - tileLeft,
+                            destination.bottom - tileTop
+                        ),
+                        null
+                    )
+                    tile.getPixels(pixels, 0, tileSize, 0, 0, tileSize, tileSize)
+                    if (pixels.any { (it ushr 24) != 0 }) {
+                        val output = ByteArrayOutputStream()
+                        check(tile.compress(Bitmap.CompressFormat.PNG, 100, output))
+                        result[TileKey(tx, ty).storageKey()] = output.toByteArray()
+                    }
+                } finally {
+                    tile.recycle()
+                }
+            }
+        }
+        return result
     }
 
     fun validateSafeEntryPath(entryName: String) {
