@@ -1,0 +1,49 @@
+{
+  "project": "Infinite Studio Native Android RC3 source and artifact record",
+  "status": "INCOMPLETE_BLOCKED_AND_CANCELED",
+  "createdDate": "2026-11-17",
+  "repository": "westkitty/Infinite_Studio",
+  "workingBranch": "codex/native-rc3-reproducible",
+  "headCommit": "59acc05e23c64f65d9b03bd80da9badfcfc3c102",
+  "trackedWorkingChanges": [],
+  "untrackedLocalOnly": [
+    "?? companion/__pycache__/",
+    "?? debug.keystore"
+  ],
+  "baseBranchCommit": "a8a0c2af2b0ef43a81bc95d0984fff370d3661c4",
+  "artifacts": {
+    "sourceZip": {
+      "path": "/workspace/Infinite_Studio_Native_Android_RC3.zip",
+      "bytes": 1385231,
+      "sha256": "17dedabd905ec396da441e30779218a2c2ad24a91d52c390da3261ca87501e15",
+      "entries": 128,
+      "sourceManifestSha256": "ab9b3f4f226d40f07695febf4387b6f4f7bb82b657b75831a5e3dbefdaad4610"
+    },
+    "debugApk": {
+      "path": "/workspace/Infinite_Studio_Native_Android_RC3.apk",
+      "bytes": 19587403,
+      "sha256": "9617c9eafd729156f78786a993f77e6341045acff71ecee35c3793908848ca54"
+    }
+  },
+  "verification": {
+    "sourceZipIntegrity": "PASS (128 unique entries; all 127 manifest-listed source files match recorded sizes and SHA-256)",
+    "originalSourceSha256": "0e1497037505c011d7837874f5a277c5b65cc030161e36fc33102218f9970b76",
+    "androidCompile": "PASS (:app:compileDebugKotlin)",
+    "androidTestSourceCompile": "PASS (:app:compileDebugUnitTestKotlin)",
+    "androidDebugApkBuild": "PASS (:app:assembleDebug)",
+    "androidUnitTestExecution": "BLOCKED (nativeruntime-dist-compat:1.0.16 redirects to gcp.mirrors.maven.org; restricted policy returned HTTP 403 before tests ran)",
+    "credentialBoundary": "PASS (manual source and 145-entry APK scan; template token values are empty; automated Robolectric credential test blocked)",
+    "companionTestsActiveCheckout": "PASS (3/3)",
+    "companionTestsFreshExtraction": "PASS (3/3 from extracted final RC3 source)",
+    "freshExtractionAndroidBuild": "CANCELED_BEFORE_COMPLETION (user interrupted the Gradle process)",
+    "freshExtractionAndroidTests": "NOT_RUN",
+    "deviceSpecificQa": "NOT_STARTED_NO_DEVICE",
+    "signingKey": "Throwaway debug keystore is local-only and excluded from the source ZIP."
+  },
+  "onboardingDraft": {
+    "status": "saved",
+    "requiresPublish": true,
+    "allowedDomainAdded": "gcp.mirrors.maven.org",
+    "fields": "install_script and start_skill"
+  }
+}

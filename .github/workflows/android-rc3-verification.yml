@@ -1,0 +1,256 @@
+name: Infinite Studio RC3 verification
+
+on:
+  push:
+    branches:
+      - codex/native-rc3-reproducible
+
+permissions:
+  contents: read
+
+jobs:
+  rc3-verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Check out the pushed RC3 commit and its source history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Confirm the exact branch and commit
+        run: |
+          test "$GITHUB_REF" = "refs/heads/codex/native-rc3-reproducible"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          mkdir -p verification
+          printf 'branch=%s\ncommit=%s\n' "${GITHUB_REF#refs/heads/}" "$GITHUB_SHA" | tee verification/identity.txt
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Configure Android SDK 36
+        run: |
+          test -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+
+      - name: Check protected browser source and exact RC3 archive
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, pathlib, re, zipfile
+
+          root = pathlib.Path.cwd()
+          out = root / 'verification'
+          out.mkdir(exist_ok=True)
+          protected = [
+              'index.html', 'laboratory.css', 'laboratory.js', 'laboratory.ui.html',
+              'original_source.html', 'server.py', 'studio_futures.png', 'studio_home.png',
+              'studio_phone_preview.png', 'studio_tablet_portrait.png',
+          ]
+          baseline = '242534065f7035f57a44bb400cb30bc2cd74387d'
+          subprocess_args = ['git', 'diff', '--exit-code', baseline, 'HEAD', '--', *protected]
+          import subprocess
+          subprocess.run(subprocess_args, check=True)
+          original = root / 'original_source.html'
+          assert hashlib.sha256(original.read_bytes()).hexdigest() == '0e1497037505c011d7837874f5a277c5b65cc030161e36fc33102218f9970b76'
+
+          bundle = root / 'rc3-release-candidate' / 'Infinite_Studio_Native_Android_RC3.zip'
+          manifest_path = root / 'rc3-release-candidate' / 'RC3_ARTIFACT_MANIFEST.json'
+          assert hashlib.sha256(bundle.read_bytes()).hexdigest() == '17dedabd905ec396da441e30779218a2c2ad24a91d52c390da3261ca87501e15'
+          assert hashlib.sha256(manifest_path.read_bytes()).hexdigest() == 'd904daccd1c72775b36eb19fc76c86d63406ff5ddeff2251912499219072ebbc'
+          manifest = json.loads(manifest_path.read_text())
+          assert manifest['artifacts']['sourceZip']['sha256'] == '17dedabd905ec396da441e30779218a2c2ad24a91d52c390da3261ca87501e15'
+          assert manifest['artifacts']['debugApk']['sha256'] == '9617c9eafd729156f78786a993f77e6341045acff71ecee35c3793908848ca54'
+          with zipfile.ZipFile(bundle) as z:
+              infos = z.infolist()
+              assert len(infos) == 128 and len({i.filename for i in infos}) == 128
+              names = {i.filename for i in infos}
+              for name in names:
+                  lower = name.lower()
+                  assert not (name.startswith('/') or '..' in pathlib.PurePosixPath(name).parts)
+                  assert not any(x in lower for x in ('debug.keystore', '.git/', '.gradle/', '/build/', '__pycache__/'))
+                  assert not (lower.endswith('.env') or '/.env' in lower) or lower.endswith('.env.example')
+              source_manifest = json.loads(z.read('SOURCE_MANIFEST.json'))
+              assert hashlib.sha256(z.read('SOURCE_MANIFEST.json')).hexdigest() == manifest['artifacts']['sourceZip']['sourceManifestSha256']
+              entries = source_manifest['entries']
+              assert len(entries) == 127 and 'SOURCE_MANIFEST.json' in names
+              for entry in entries:
+                  info = z.getinfo(entry['path'])
+                  data = z.read(entry['path'])
+                  assert info.file_size == entry['bytes']
+                  assert hashlib.sha256(data).hexdigest() == entry['sha256']
+              assert hashlib.sha256(z.read('original_source.html')).hexdigest() == '0e1497037505c011d7837874f5a277c5b65cc030161e36fc33102218f9970b76'
+              # Reject credential-shaped values and private-key material; report only filenames.
+              secret = re.compile(rb'(?:sk-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{30,}|gh[pousr]_[A-Za-z0-9]{20,}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----)')
+              hits = []
+              for name in names:
+                  data = z.read(name)
+                  if secret.search(data): hits.append(name)
+              assert not hits, f'credential marker found in: {hits}'
+          (out / 'source-validation.txt').write_text(
+              f'protected_browser_files=10 unchanged from {baseline}\n'
+              'original_source_sha256=0e1497037505c011d7837874f5a277c5b65cc030161e36fc33102218f9970b76\n'
+              f'exact_rc3_zip_sha256={hashlib.sha256(bundle.read_bytes()).hexdigest()}\n'
+              'archive_entries=128; manifest_listed_source_files=127; all sizes and hashes match\n'
+              'archive_credential_scan=PASS\n')
+          PY
+
+      - name: Create disposable debug signing key
+        run: |
+          keytool -genkeypair -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 2 -dname "CN=Android Debug,O=Android,C=US"
+
+      - name: Run Android tests and assemble from the checked-out source
+        run: gradle --no-daemon --console plain :app:testDebugUnitTest :app:assembleDebug
+
+      - name: Verify Android tests executed and passed
+        run: |
+          python3 - <<'PY'
+          import pathlib, xml.etree.ElementTree as ET
+          files = list(pathlib.Path('app/build/test-results/testDebugUnitTest').glob('TEST-*.xml'))
+          assert files, 'No Android JUnit XML reports were produced'
+          cases = [case for file in files for case in ET.parse(file).iter('testcase')]
+          skipped = sum(case.find('skipped') is not None for case in cases)
+          failed = sum(case.find('failure') is not None or case.find('error') is not None for case in cases)
+          executed = len(cases) - skipped
+          assert executed > 0 and skipped == 0 and failed == 0, f'testcases={len(cases)} executed={executed} skipped={skipped} failed={failed}'
+          pathlib.Path('verification/android-tests.txt').write_text(f'android_test_cases={len(cases)}\nexecuted={executed}\nskipped={skipped}\nfailed={failed}\nresult=PASS\n')
+          print(f'Android tests: {executed} executed, {failed} failed, {skipped} skipped')
+          PY
+
+      - name: Run companion tests from the checked-out source
+        run: |
+          set -o pipefail
+          python3 -m unittest discover -s companion -p 'test_*.py' -v 2>&1 | tee verification/companion-tests.txt
+
+      - name: Verify companion test count
+        run: |
+          python3 - <<'PY'
+          import pathlib, re
+          p = pathlib.Path('verification/companion-tests.txt')
+          text = p.read_text()
+          m = re.search(r'^Ran (\d+) tests? in ', text, re.M)
+          assert m and int(m.group(1)) > 0 and re.search(r'^OK$', text, re.M), 'Companion tests did not report a passing execution'
+          with pathlib.Path('verification/companion-summary.txt').open('w') as f: f.write(f'companion_tests={m.group(1)}\nresult=PASS\n')
+          PY
+
+      - name: Verify built APK contains no embedded credentials
+        run: |
+          python3 - <<'PY'
+          import hashlib, pathlib, re, zipfile
+          apk = pathlib.Path('app/build/outputs/apk/debug/app-debug.apk')
+          assert apk.is_file()
+          pattern = re.compile(rb'(?:sk-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{30,}|gh[pousr]_[A-Za-z0-9]{20,}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----)')
+          hits=[]
+          with zipfile.ZipFile(apk) as z:
+              assert not any(n.lower().endswith(('.env', '.pem', '.p12', '.jks', '.keystore')) for n in z.namelist())
+              for n in z.namelist():
+                  if pattern.search(z.read(n)): hits.append(n)
+              assert not any(b'api.openai.com' in z.read(n) or b'OPENAI_API_KEY' in z.read(n) for n in z.namelist()), 'OpenAI endpoint or client-key reference embedded in APK'
+          assert not hits, f'credential marker found in APK entries: {hits}'
+          pathlib.Path('verification/apk-validation.txt').write_text(f'apk_assembly=PASS\nci_apk_sha256={hashlib.sha256(apk.read_bytes()).hexdigest()}\nembedded_credential_scan=PASS\nremote_endpoint_scan=PASS\n')
+          PY
+
+      - name: Extract exact RC3 source ZIP to a clean directory
+        run: |
+          mkdir -p /tmp/rc3-extracted
+          unzip -q rc3-release-candidate/Infinite_Studio_Native_Android_RC3.zip -d /tmp/rc3-extracted
+          test -f /tmp/rc3-extracted/settings.gradle || test -f /tmp/rc3-extracted/settings.gradle.kts
+          cmp original_source.html /tmp/rc3-extracted/original_source.html
+
+      - name: Verify extracted source manifest and expected files
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, pathlib
+          root = pathlib.Path('/tmp/rc3-extracted')
+          manifest = json.loads((root / 'SOURCE_MANIFEST.json').read_text())
+          for entry in manifest['entries']:
+              path = root / entry['path']
+              assert path.is_file() and path.stat().st_size == entry['bytes']
+              assert hashlib.sha256(path.read_bytes()).hexdigest() == entry['sha256']
+          for name in ('settings.gradle', 'app/build.gradle.kts', 'companion/server.py', 'original_source.html'):
+              assert (root / name).is_file(), f'missing expected source file: {name}'
+          (pathlib.Path('verification') / 'extracted-source.txt').write_text(f'manifest_files={len(manifest["entries"])}; all size/hash checks=PASS\nexpected_files=PASS\n')
+          PY
+
+      - name: Create disposable key for extracted source
+        working-directory: /tmp/rc3-extracted
+        run: |
+          keytool -genkeypair -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 2 -dname "CN=Android Debug,O=Android,C=US"
+
+      - name: Run Android tests and assemble from exact extracted archive
+        working-directory: /tmp/rc3-extracted
+        run: gradle --no-daemon --console plain :app:testDebugUnitTest :app:assembleDebug
+
+      - name: Verify extracted Android test execution and APK credentials
+        working-directory: /tmp/rc3-extracted
+        run: |
+          python3 - <<'PY'
+          import hashlib, pathlib, re, xml.etree.ElementTree as ET, zipfile
+          results = list(pathlib.Path('app/build/test-results/testDebugUnitTest').glob('TEST-*.xml'))
+          assert results, 'No extracted-source Android JUnit XML reports were produced'
+          cases = [c for p in results for c in ET.parse(p).iter('testcase')]
+          skipped = sum(c.find('skipped') is not None for c in cases)
+          failed = sum(c.find('failure') is not None or c.find('error') is not None for c in cases)
+          assert cases and skipped == 0 and failed == 0, f'cases={len(cases)} skipped={skipped} failed={failed}'
+          apk = pathlib.Path('app/build/outputs/apk/debug/app-debug.apk')
+          assert apk.is_file()
+          pattern = re.compile(rb'(?:sk-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{30,}|gh[pousr]_[A-Za-z0-9]{20,}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----)')
+          with zipfile.ZipFile(apk) as z:
+              assert not any(n.lower().endswith(('.env', '.pem', '.p12', '.jks', '.keystore')) for n in z.namelist())
+              assert not [n for n in z.namelist() if pattern.search(z.read(n))]
+              assert not any(b'api.openai.com' in z.read(n) or b'OPENAI_API_KEY' in z.read(n) for n in z.namelist()), 'OpenAI endpoint or client-key reference embedded in extracted APK'
+          pathlib.Path('verification/extracted-android-tests.txt').write_text(f'android_test_cases={len(cases)}\nexecuted={len(cases)-skipped}\nskipped={skipped}\nfailed={failed}\nresult=PASS\napk_assembly=PASS\napk_sha256={hashlib.sha256(apk.read_bytes()).hexdigest()}\nembedded_credential_scan=PASS\nremote_endpoint_scan=PASS\n')
+          PY
+
+      - name: Run companion tests from exact extracted archive
+        working-directory: /tmp/rc3-extracted
+        run: |
+          set -o pipefail
+          python3 -m unittest discover -s companion -p 'test_*.py' -v 2>&1 | tee "$GITHUB_WORKSPACE/verification/extracted-companion-tests.txt"
+
+      - name: Verify extracted companion test count
+        run: |
+          python3 - <<'PY'
+          import pathlib, re
+          text = pathlib.Path('verification/extracted-companion-tests.txt').read_text()
+          m = re.search(r'^Ran (\d+) tests? in ', text, re.M)
+          assert m and int(m.group(1)) > 0 and re.search(r'^OK$', text, re.M), 'Extracted companion tests did not report a passing execution'
+          pathlib.Path('verification/extracted-companion-summary.txt').write_text(f'extracted_companion_tests={m.group(1)}\nresult=PASS\n')
+          PY
+
+      - name: Create verification receipt
+        if: success()
+        run: |
+          cat verification/identity.txt verification/source-validation.txt verification/android-tests.txt verification/companion-summary.txt verification/apk-validation.txt verification/extracted-source.txt verification/extracted-android-tests.txt verification/extracted-companion-summary.txt > verification/RC3_VERIFICATION_RECEIPT.txt
+          printf '\n' >> verification/RC3_VERIFICATION_RECEIPT.txt
+          printf 'extracted_companion_test_output=verification/extracted-companion-tests.txt\n' >> verification/RC3_VERIFICATION_RECEIPT.txt
+
+      - name: Upload successful CI APK, test reports, and validation receipt
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Infinite-Studio-RC3-CI-${{ github.sha }}
+          if-no-files-found: error
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/test-results/testDebugUnitTest/**/*.xml
+            verification/
+
+      - name: Upload safe test diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Infinite-Studio-RC3-diagnostics-${{ github.sha }}
+          if-no-files-found: ignore
+          path: |
+            app/build/test-results/testDebugUnitTest/**/*.xml
+            verification/*-tests.txt
