@@ -176,8 +176,9 @@ jobs:
               path = root / entry['path']
               assert path.is_file() and path.stat().st_size == entry['bytes']
               assert hashlib.sha256(path.read_bytes()).hexdigest() == entry['sha256']
-          for name in ('settings.gradle', 'app/build.gradle.kts', 'companion/server.py', 'original_source.html'):
+          for name in ('app/build.gradle.kts', 'companion/server.py', 'original_source.html'):
               assert (root / name).is_file(), f'missing expected source file: {name}'
+          assert (root / 'settings.gradle').is_file() or (root / 'settings.gradle.kts').is_file(), 'missing Gradle settings file'
           (pathlib.Path('verification') / 'extracted-source.txt').write_text(f'manifest_files={len(manifest["entries"])}; all size/hash checks=PASS\nexpected_files=PASS\n')
           PY
 
