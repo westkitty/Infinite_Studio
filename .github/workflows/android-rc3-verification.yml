@@ -195,7 +195,7 @@ jobs:
         working-directory: /tmp/rc3-extracted
         run: |
           python3 - <<'PY'
-          import hashlib, pathlib, re, xml.etree.ElementTree as ET, zipfile
+          import hashlib, os, pathlib, re, xml.etree.ElementTree as ET, zipfile
           results = list(pathlib.Path('app/build/test-results/testDebugUnitTest').glob('TEST-*.xml'))
           assert results, 'No extracted-source Android JUnit XML reports were produced'
           cases = [c for p in results for c in ET.parse(p).iter('testcase')]
@@ -209,7 +209,7 @@ jobs:
               assert not any(n.lower().endswith(('.env', '.pem', '.p12', '.jks', '.keystore')) for n in z.namelist())
               assert not [n for n in z.namelist() if pattern.search(z.read(n))]
               assert not any(b'api.openai.com' in z.read(n) or b'OPENAI_API_KEY' in z.read(n) for n in z.namelist()), 'OpenAI endpoint or client-key reference embedded in extracted APK'
-          pathlib.Path('verification/extracted-android-tests.txt').write_text(f'android_test_cases={len(cases)}\nexecuted={len(cases)-skipped}\nskipped={skipped}\nfailed={failed}\nresult=PASS\napk_assembly=PASS\napk_sha256={hashlib.sha256(apk.read_bytes()).hexdigest()}\nembedded_credential_scan=PASS\nremote_endpoint_scan=PASS\n')
+          pathlib.Path(os.environ['GITHUB_WORKSPACE'], 'verification', 'extracted-android-tests.txt').write_text(f'android_test_cases={len(cases)}\nexecuted={len(cases)-skipped}\nskipped={skipped}\nfailed={failed}\nresult=PASS\napk_assembly=PASS\napk_sha256={hashlib.sha256(apk.read_bytes()).hexdigest()}\nembedded_credential_scan=PASS\nremote_endpoint_scan=PASS\n')
           PY
 
       - name: Run companion tests from exact extracted archive
