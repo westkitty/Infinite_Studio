@@ -9,6 +9,7 @@ import android.graphics.Rect
 import android.graphics.RectF
 import com.example.document.BezierNode
 import com.example.document.CanonicalDocument
+import com.example.document.CanonPassportCodec
 import com.example.document.DocumentArchiveCodec
 import com.example.document.DocumentLayer
 import com.example.document.TimelineFrame
@@ -511,6 +512,14 @@ object VectorAndFoundryEngine {
             zos.putNextEntry(ZipEntry("artwork.svg"))
             zos.write(svgBytes)
             zos.closeEntry()
+
+            doc.canonPassports.forEachIndexed { index, passport ->
+                val path = "canon/passport_${index}.json"
+                val payload = CanonPassportCodec.exportPortable(passport)
+                zos.putNextEntry(ZipEntry(path))
+                zos.write(payload)
+                zos.closeEntry()
+            }
 
             componentBytes.forEach { (path, data) ->
                 zos.putNextEntry(ZipEntry(path))

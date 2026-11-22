@@ -47,6 +47,8 @@ def _read_config() -> Dict[str, Any]:
         "max_payload_bytes": int(os.environ.get("INFINITE_COMPANION_MAX_PAYLOAD_BYTES", str(DEFAULT_MAX_PAYLOAD_BYTES))),
         "job_ttl_seconds": int(os.environ.get("INFINITE_COMPANION_JOB_TTL_SECONDS", str(DEFAULT_JOB_TTL_SECONDS))),
         "openai_api_key": os.environ.get("OPENAI_API_KEY", "").strip(),
+        "paid_image_edit_enabled": os.environ.get("INFINITE_COMPANION_ENABLE_PAID_IMAGE_EDIT", "").strip().lower() == "yes",
+        "max_paid_requests": min(3, max(0, int(os.environ.get("INFINITE_COMPANION_MAX_PAID_REQUESTS", "1")))),
     }
 
 
@@ -213,6 +215,7 @@ class CompanionState:
         self._lock = threading.Lock()
         self._jobs: Dict[str, JobEntry] = {}
         self._idempotency: Dict[str, str] = {}
+        self._paid_attempts = 0
 
     def purge_expired(self, now: Optional[float] = None) -> int:
         ts = now if now is not None else time.time()
@@ -226,7 +229,7 @@ class CompanionState:
         return removed
 
     def health_payload(self) -> Dict[str, Any]:
-        remote_ready = self.config["mode"] == "REMOTE_OPENAI" and bool(self.config["openai_api_key"])
+        remote_ready = self.config["mode"] == "REMOTE_OPENAI" and bool(self.config.get("openai_api_key")) and bool(self.config.get("paid_image_edit_enabled", False))
         return {
             "providerId": "loopback-companion",
             "status": "healthy",
@@ -310,24 +313,49 @@ class CompanionState:
         if mode == "REMOTE_OPENAI":
             if not bool(payload.get("userConfirmedPaidEgress", False)):
                 return HTTPStatus.FORBIDDEN, self._error_record(
-                    payload,
-                    "CONSENT_REQUIRED",
-                    "Remote OpenAI inference blocked without userConfirmedPaidEgress=true.",
+                    payload, "CONSENT_REQUIRED", "Explicit per-request remote-inference consent required."
                 )
-            if not self.config["openai_api_key"]:
+            if not self.config.get("paid_image_edit_enabled", False):
                 return HTTPStatus.SERVICE_UNAVAILABLE, self._error_record(
-                    payload,
-                    "MISSING_API_KEY",
-                    "Host OPENAI_API_KEY is not set in companion environment.",
+                    payload, "PAID_EGRESS_DISABLED", "Host image-edit enable switch is off."
                 )
-            # Note: Remote adapter contract intentionally left explicit; never called in tests unless configured.
-            return HTTPStatus.NOT_IMPLEMENTED, self._error_record(
-                payload,
-                "PAID_EGRESS_DISABLED",
-                "Use host OpenAI SDK/proxy adapter for production remote execution.",
-            )
+            if not self.config.get("openai_api_key", ""):
+                return HTTPStatus.SERVICE_UNAVAILABLE, self._error_record(
+                    payload, "MISSING_API_KEY", "Host OpenAI credential has not been configured."
+                )
+            from remote_openai import ImageEditError, edit_png, ALLOWED_MODELS
+            model = str(payload.get("modelId") or "gpt-image-2.6-flare")
+            if model not in ALLOWED_MODELS:
+                return HTTPStatus.BAD_REQUEST, self._error_record(
+                    payload, "INVALID_RESPONSE", "Unsupported or unapproved image model."
+                )
+            with self._lock:
+                if self._paid_attempts >= int(self.config.get("max_paid_requests", 1)):
+                    return HTTPStatus.TOO_MANY_REQUESTS, self._error_record(
+                        payload, "QUOTA_CAP_REACHED", "Host paid-request budget exhausted."
+                    )
+                self._paid_attempts += 1
+            try:
+                out_png = edit_png(
+                    source_png=crop_bytes,
+                    mask_png=mask_bytes if payload.get("maskPngBase64") else None,
+                    prompt=str(payload["prompt"]),
+                    model=model,
+                    api_key=self.config["openai_api_key"],
+                )
+            except ImageEditError as error:
+                return HTTPStatus.BAD_GATEWAY, self._error_record(
+                    payload, "NETWORK_ERROR", str(error)
+                )
+            processing_mode = "REMOTE_OPENAI_IMAGE_EDIT"
+            model_version = model
+            response_detail = "Image edit returned by host provider; requires explicit local artist acceptance."
+        else:
+            out_png = _recolor_png_deterministic(crop_bytes, direction)
+            processing_mode = "LOOPBACK_COMPANION_DETERMINISTIC"
+            model_version = "companion-local-study-v1"
+            response_detail = f"Loopback deterministic study completed for {payload['branchLabel']}. Not remote AI."
 
-        out_png = _recolor_png_deterministic(crop_bytes, direction)
         out_b64 = base64.b64encode(out_png).decode("ascii")
         job_id = f"cmp_{uuid.uuid4().hex[:10]}"
         entry = JobEntry(
@@ -337,14 +365,14 @@ class CompanionState:
             documentId=str(payload["documentId"]),
             baseRevision=base_rev,
             status="SUCCEEDED",
-            processingMode="LOOPBACK_COMPANION_DETERMINISTIC",
+            processingMode=processing_mode,
             resultPngBase64=out_b64,
-            message=f"Loopback deterministic study completed for {payload['branchLabel']}. Not remote AI.",
+            message=response_detail,
             errorCode="NONE",
             createdAtEpoch=now,
             expiresAtEpoch=now + ttl,
             sourceHash=source_hash,
-            modelVersion="companion-local-study-v1",
+            modelVersion=model_version,
         )
         with self._lock:
             self._jobs[job_id] = entry

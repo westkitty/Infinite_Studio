@@ -1,0 +1,40 @@
+<div id="lab-bar" aria-label="Studio controls">
+  <span id="lab-status" role="status" aria-live="polite">Local canvas · no API spending</span>
+  <button type="button" id="lab-project-open" title="Project backup and recovery">◇ Project</button>
+  <button type="button" id="lab-futures-open" class="lab-primary" title="Explore reversible futures for your selection">◈ Futures</button>
+</div>
+<input type="file" id="lab-project-file" accept=".iastudio,application/json" hidden>
+<section id="lab-project-modal" class="lab-shade lab-hidden" role="dialog" aria-modal="true" aria-labelledby="lab-project-title">
+ <div id="lab-project-menu" class="lab-dialog">
+  <div class="lab-head"><div><div class="lab-kicker">Project Vault</div><h2 id="lab-project-title">Keep the whole drawing.</h2><p class="lab-help">Editable layers, blending, canvas bounds and view — not merely an exported picture.</p></div><button class="lab-close" id="lab-project-close" title="Close">×</button></div>
+  <div class="lab-actions">
+    <button id="lab-save-project" class="lab-btn lab-primary">↓ Save editable project</button>
+    <button id="lab-load-project" class="lab-btn">↑ Open a project</button>
+    <button id="lab-recover-project" class="lab-btn" disabled>↺ Recover local draft</button>
+    <button id="lab-new-project" class="lab-btn">＋ New canvas</button>
+  </div>
+  <p class="lab-fineprint">Draft recovery uses this browser's local storage when available; it is not a backup. Save a <code>.iastudio</code> file periodically for a portable, editable copy. Opening or creating a project replaces the current canvas only after confirmation.</p>
+  <p id="lab-project-status" role="status" aria-live="polite"></p>
+ </div>
+</section>
+<section id="lab-modal" class="lab-shade lab-hidden" role="dialog" aria-modal="true" aria-labelledby="lab-title" aria-busy="false">
+ <div class="lab-dialog">
+  <div class="lab-head"><div><div class="lab-kicker">The Futures Table · Select → Explore → Commit</div><h2 id="lab-title">One drawing. Three possible lives.</h2><p class="lab-help">The original stays intact until you explicitly accept a branch.</p></div><button class="lab-close" id="lab-close" title="Close futures">×</button></div>
+  <div class="lab-grid">
+   <div class="lab-col">
+    <div><h3>Describe the change</h3><label for="lab-instruction">Direction</label><textarea id="lab-instruction" placeholder="E.g. a faceted glass lantern, still following my sketch's silhouette"></textarea></div>
+    <div><h3>Local studies · no API calls</h3><div id="lab-branches" class="lab-strip" role="group" aria-label="Select a visual study"></div></div>
+    <div><h3>Optional model edit</h3><label for="lab-model">Model</label><select id="lab-model"><option value="gpt-image-2.6-flare">Flare · fast exploration</option><option value="gpt-image-2.6-sunburst">Sunburst · deliberate detail</option></select></div>
+    <div class="lab-actions"><button id="lab-generate" class="lab-btn" disabled>✦ Generate model future</button><span id="lab-connection">API connector offline</span></div>
+    <p class="lab-help">The three previews above are deterministic local color studies, <strong>not AI output</strong>. An API result replaces only the selected study after an explicit paid-call confirmation.</p>
+   </div>
+   <div class="lab-col">
+    <div><h3>Peel between the original and the selected future</h3><div class="lab-preview"><img id="lab-preview-before" alt="The original selected area"><img id="lab-preview-after" alt="Proposed version of the selected area"><div id="lab-compare-line" class="lab-divider"></div><span class="lab-preview-caption">ORIGINAL</span><span class="lab-preview-caption right">POSSIBILITY</span></div></div>
+    <label for="lab-split">Comparison: <span id="lab-split-value">50%</span> revealed</label><input type="range" min="0" max="100" value="50" id="lab-split" aria-label="Split between before and after">
+    <div class="lab-actions"><button id="lab-accept" class="lab-btn lab-primary">✓ Accept as a new layer</button><button id="lab-discard" class="lab-button-alt">Discard without changes</button></div>
+    <p id="lab-progress" role="status" aria-live="polite"></p>
+    <div class="lab-fineprint"><span class="lab-section-title">Conservation rule</span><div>Every change is clipped to the selected shape at commit. The original layers remain untouched. AI mask guidance is approximate, but the final compositing boundary is enforced locally.</div></div>
+   </div>
+  </div>
+ </div>
+</section>

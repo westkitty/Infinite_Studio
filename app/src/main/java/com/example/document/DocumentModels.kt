@@ -376,6 +376,7 @@ data class CanonicalDocument(
     val recipes: List<RecipeGraph> = listOf(RecipeGraph()),
     val vaultAssets: List<VaultAssetRecord> = emptyList(),
     val characterSheets: List<CharacterSheet> = listOf(CharacterSheet()),
+    val canonPassports: List<CanonPassport> = emptyList(),
     val guidanceMarks: List<AiGuidanceMark> = emptyList(),
     val customPresets: List<CustomBrushPreset> = emptyList(),
     val branches: List<BranchNode> = emptyList(),

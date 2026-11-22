@@ -24,6 +24,7 @@ import com.example.render.SparseTileRenderer
 import com.example.services.ProviderJobRecord
 import com.example.services.ProviderJobStatus
 import com.example.tools.TileBrushEngine
+import java.io.ByteArrayOutputStream
 import java.util.UUID
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -105,15 +106,12 @@ object FuturesAndConstraintsEngine {
             floor(baseRect.top - margin) + ceil(baseRect.height() + 2f * margin)
         )
 
-        val maxSide = 1280f
-        val scale = min(1f, maxSide / max(regionBounds.width(), regionBounds.height()))
-        val raw = renderer.renderFlattenedRegion(doc, regionBounds, includePaper = true, includeVectors = true)
-
-        val outW = max(1, (regionBounds.width() * scale).roundToInt())
-        val outH = max(1, (regionBounds.height() * scale).roundToInt())
-        val scaledOriginal = if (raw.width == outW && raw.height == outH) raw else {
-            Bitmap.createScaledBitmap(raw, outW, outH, true).also { raw.recycle() }
-        }
+        val scaledOriginal = renderer.renderBoundedPreview(
+            doc, regionBounds, maxSide = 1280, includePaper = true, includeVectors = true
+        )
+        val outW = scaledOriginal.width
+        val outH = scaledOriginal.height
+        val scale = outW.toFloat() / regionBounds.width()
 
         val maskBitmap = Bitmap.createBitmap(outW, outH, Bitmap.Config.ARGB_8888)
         val maskCanvas = Canvas(maskBitmap)
@@ -263,69 +261,79 @@ object FuturesAndConstraintsEngine {
         branchIndex: Int
     ): Pair<CanonicalDocument, DocumentLayer> {
         val branch = session.branches[branchIndex.coerceIn(0, session.branches.lastIndex)]
-        val layerBitmap = Bitmap.createBitmap(doc.bounds.width, doc.bounds.height, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(layerBitmap)
-        canvas.save()
-
-        val pts = session.selectionMask?.points
-        if (pts != null && pts.size >= 3) {
-            val clipPath = Path()
-            pts.forEachIndexed { i, p ->
-                val lp = TileBrushEngine.worldToLocal(doc.bounds, p.x, p.y)
-                if (i == 0) clipPath.moveTo(lp.x, lp.y) else clipPath.lineTo(lp.x, lp.y)
-            }
-            clipPath.close()
-            canvas.clipPath(clipPath)
+        val ts = doc.tileSize
+        require(ts in 1..1024)
+        val bounds = doc.bounds
+        val x0 = floor((session.regionBounds.left - bounds.minX) / ts).toInt().coerceIn(0, (bounds.width - 1) / ts)
+        val y0 = floor((session.regionBounds.top - bounds.minY) / ts).toInt().coerceIn(0, (bounds.height - 1) / ts)
+        val x1 = floor((session.regionBounds.right - bounds.minX) / ts).toInt().coerceIn(0, (bounds.width - 1) / ts)
+        val y1 = floor((session.regionBounds.bottom - bounds.minY) / ts).toInt().coerceIn(0, (bounds.height - 1) / ts)
+        val acceptedTiles = linkedMapOf<String, ByteArray>()
+        val acceptedHashes = linkedMapOf<String, String>()
+        val clipPath = Path().apply {
+            val points = session.selectionMask?.points
+            if (points != null && points.size >= 3) {
+                points.forEachIndexed { idx, p -> if (idx == 0) moveTo(p.x, p.y) else lineTo(p.x, p.y) }
+                close()
+            } else addRect(session.regionBounds, Path.Direction.CW)
         }
-
-        val pos = TileBrushEngine.worldToLocal(doc.bounds, session.regionBounds.left, session.regionBounds.top)
-        val dst = RectF(
-            pos.x, pos.y,
-            pos.x + session.regionBounds.width(),
-            pos.y + session.regionBounds.height()
-        )
-        canvas.drawBitmap(branch.candidateBitmap, null, dst, Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG))
-        canvas.restore()
-
-        // Explicitly punch out any FORBIDDEN_REGION or PROTECTED_SILHOUETTE constraint locked by user
-        val clearPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        val forbiddenPaths = doc.constraints.asSequence().filter {
+            it.userLocked && (it.kind == ConstraintKind.FORBIDDEN_REGION || it.kind == ConstraintKind.PROTECTED_SILHOUETTE) && it.points.size >= 3
+        }.map { c ->
+            Path().apply {
+                c.points.forEachIndexed { index, v -> if (index == 0) moveTo(v.x, v.y) else lineTo(v.x, v.y) }
+                close()
+            }
+        }.toList()
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+        val clear = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL
             xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
         }
-        doc.constraints.filter {
-            it.userLocked && (it.kind == ConstraintKind.FORBIDDEN_REGION || it.kind == ConstraintKind.PROTECTED_SILHOUETTE) && it.points.size >= 3
-        }.forEach { constraint ->
-            val p = Path()
-            constraint.points.forEachIndexed { idx, v ->
-                val lp = TileBrushEngine.worldToLocal(doc.bounds, v.x, v.y)
-                if (idx == 0) p.moveTo(lp.x, lp.y) else p.lineTo(lp.x, lp.y)
+        val area = session.regionBounds
+        if (x0 <= x1 && y0 <= y1) {
+            for (ty in y0..y1) for (tx in x0..x1) {
+                val left = bounds.minX + tx * ts
+                val top = bounds.minY + ty * ts
+                val bmp = Bitmap.createBitmap(ts, ts, Bitmap.Config.ARGB_8888)
+                try {
+                    val canvas = Canvas(bmp)
+                    canvas.translate(-left, -top)
+                    canvas.save()
+                    canvas.clipPath(clipPath)
+                    canvas.drawBitmap(branch.candidateBitmap, null, area, paint)
+                    canvas.restore()
+                    forbiddenPaths.forEach { canvas.drawPath(it, clear) }
+                    val px = IntArray(ts * ts)
+                    bmp.getPixels(px, 0, ts, 0, 0, ts, ts)
+                    if (px.any { (it ushr 24) != 0 }) {
+                        val stream = ByteArrayOutputStream()
+                        check(bmp.compress(Bitmap.CompressFormat.PNG, 100, stream))
+                        val data = stream.toByteArray()
+                        val key = "${tx}_${ty}"
+                        acceptedTiles[key] = data
+                        acceptedHashes[key] = DocumentArchiveCodec.sha256Hex(data)
+                    }
+                } finally { bmp.recycle() }
             }
-            p.close()
-            canvas.drawPath(p, clearPaint)
         }
-
-        val tiles = DocumentArchiveCodec.sliceBitmapToSparseTiles(layerBitmap, doc.tileSize)
-        layerBitmap.recycle()
-
-        val prefix = when (branch.sourceLabel) {
+        val label = when (branch.sourceLabel) {
             "LOCAL_STUDY" -> "Study: "
             "OFFLINE_MOCK_PROVIDER" -> "Mock Candidate: "
             else -> "Candidate: "
         }
         val newLayer = DocumentLayer(
             id = "layer_${UUID.randomUUID().toString().take(8)}",
-            name = "$prefix${branch.label}",
+            name = "$label${branch.label}",
             visible = true,
             opacity = 1f,
-            tiles = tiles,
-            tileHashes = tiles.mapValues { (_, b) -> DocumentArchiveCodec.sha256Hex(b) }
+            tiles = acceptedTiles,
+            tileHashes = acceptedHashes
         )
-
-        val activeIdx = doc.layers.indexOfFirst { it.id == doc.activeLayerId }
-        val updatedLayers = doc.layers.toMutableList()
-        if (activeIdx >= 0) updatedLayers.add(activeIdx + 1, newLayer) else updatedLayers.add(newLayer)
-
-        return doc.copy(layers = updatedLayers, activeLayerId = newLayer.id) to newLayer
+        val insertAt = doc.layers.indexOfFirst { it.id == doc.activeLayerId }
+        val layers = doc.layers.toMutableList()
+        if (insertAt >= 0) layers.add(insertAt + 1, newLayer) else layers.add(newLayer)
+        return doc.copy(layers = layers, activeLayerId = newLayer.id) to newLayer
     }
 
     // --- P02 AI Brush Guidance Marks ---
@@ -428,61 +436,70 @@ object FuturesAndConstraintsEngine {
         blendStrength: Float = 0.78f,
         featherPx: Float = 36f
     ): CanonicalDocument {
-        val ts = doc.tileSize.toFloat()
+        val ts = doc.tileSize
         val lt = leftTiles.coerceIn(0, 3)
         val rt = rightTiles.coerceIn(0, 3)
         val tt = topTiles.coerceIn(0, 3)
         val bt = bottomTiles.coerceIn(0, 3)
         if (lt + rt + tt + bt == 0) return doc
-
         var workDoc = doc
-        if (lt > 0) workDoc = TileBrushEngine.expandBoundsIfNeeded(workDoc, workDoc.bounds.minX - lt * ts, 0f, 8f)
-        if (rt > 0) workDoc = TileBrushEngine.expandBoundsIfNeeded(workDoc, workDoc.bounds.maxX + rt * ts, 0f, 8f)
-        if (tt > 0) workDoc = TileBrushEngine.expandBoundsIfNeeded(workDoc, 0f, workDoc.bounds.minY - tt * ts, 8f)
-        if (bt > 0) workDoc = TileBrushEngine.expandBoundsIfNeeded(workDoc, 0f, workDoc.bounds.maxY + bt * ts, 8f)
+        if (lt > 0) workDoc = TileBrushEngine.expandBoundsIfNeeded(workDoc, workDoc.bounds.minX - lt * ts.toFloat(), 0f, 8f)
+        if (rt > 0) workDoc = TileBrushEngine.expandBoundsIfNeeded(workDoc, workDoc.bounds.maxX + rt * ts.toFloat(), 0f, 8f)
+        if (tt > 0) workDoc = TileBrushEngine.expandBoundsIfNeeded(workDoc, 0f, workDoc.bounds.minY - tt * ts.toFloat(), 8f)
+        if (bt > 0) workDoc = TileBrushEngine.expandBoundsIfNeeded(workDoc, 0f, workDoc.bounds.maxY + bt * ts.toFloat(), 8f)
 
         val oldRect = RectF(doc.bounds.minX, doc.bounds.minY, doc.bounds.maxX, doc.bounds.maxY)
-        val previewSample = renderer.renderFlattenedRegion(doc, oldRect, includePaper = true, includeVectors = false)
-        val avgColor = sampleEdgeColor(previewSample)
-        previewSample.recycle()
-
-        val outLayerBmp = Bitmap.createBitmap(workDoc.bounds.width, workDoc.bounds.height, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(outLayerBmp)
-        val alphaInt = (blendStrength.coerceIn(0.15f, 1.0f) * 235f).roundToInt().coerceIn(20, 245)
-        val fillPaint = Paint().apply {
-            color = Color.argb(alphaInt, Color.red(avgColor), Color.green(avgColor), Color.blue(avgColor))
+        val edgePreview = renderer.renderBoundedPreview(doc, oldRect, maxSide = 256, includePaper = true, includeVectors = false)
+        val sampledColor = try { sampleEdgeColor(edgePreview) } finally { edgePreview.recycle() }
+        val opacity = (blendStrength.coerceIn(0.15f, 1f) * 235f).roundToInt().coerceIn(20, 245)
+        val fill = Paint().apply {
+            color = Color.argb(opacity, Color.red(sampledColor), Color.green(sampledColor), Color.blue(sampledColor))
         }
-        canvas.drawRect(0f, 0f, outLayerBmp.width.toFloat(), outLayerBmp.height.toFloat(), fillPaint)
-
-        // Carve out original area with soft optional feather border so source artwork stays untouched
-        val f = featherPx.coerceIn(0f, 96f)
-        val oldLocal = RectF(
-            doc.bounds.minX - workDoc.bounds.minX + f * 0.15f,
-            doc.bounds.minY - workDoc.bounds.minY + f * 0.15f,
-            doc.bounds.maxX - workDoc.bounds.minX - f * 0.15f,
-            doc.bounds.maxY - workDoc.bounds.minY - f * 0.15f
-        )
-        val clearPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR) }
-        canvas.drawRect(oldLocal, clearPaint)
-
-        val tiles = DocumentArchiveCodec.sliceBitmapToSparseTiles(outLayerBmp, workDoc.tileSize)
-        outLayerBmp.recycle()
-
-        val labelSuffix = listOfNotNull(
-            if (lt > 0) "L$lt" else null,
-            if (rt > 0) "R$rt" else null,
-            if (tt > 0) "T$tt" else null,
-            if (bt > 0) "B$bt" else null
-        ).joinToString("+")
-        val newLayer = DocumentLayer(
+        val clear = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.FILL
+            xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
+        }
+        val inset = featherPx.coerceIn(0f, 96f) * 0.15f
+        val protectedRect = RectF(oldRect.left + inset, oldRect.top + inset,
+            oldRect.right - inset, oldRect.bottom - inset)
+        val tiles = linkedMapOf<String, ByteArray>()
+        val hashes = linkedMapOf<String, String>()
+        val maxTx = (workDoc.bounds.width - 1) / ts
+        val maxTy = (workDoc.bounds.height - 1) / ts
+        for (ty in 0..maxTy) for (tx in 0..maxTx) {
+            val wx = workDoc.bounds.minX + tx * ts
+            val wy = workDoc.bounds.minY + ty * ts
+            val worldTile = RectF(wx, wy, wx + ts, wy + ts)
+            if (protectedRect.contains(worldTile)) continue
+            val tile = Bitmap.createBitmap(ts, ts, Bitmap.Config.ARGB_8888)
+            try {
+                val canvas = Canvas(tile)
+                canvas.translate(-wx, -wy)
+                canvas.drawRect(worldTile, fill)
+                canvas.drawRect(protectedRect, clear)
+                val buffer = IntArray(ts * ts)
+                tile.getPixels(buffer, 0, ts, 0, 0, ts, ts)
+                if (buffer.any { (it ushr 24) != 0 }) {
+                    val stream = ByteArrayOutputStream()
+                    check(tile.compress(Bitmap.CompressFormat.PNG, 100, stream))
+                    val bytes = stream.toByteArray()
+                    val key = "${tx}_${ty}"
+                    tiles[key] = bytes
+                    hashes[key] = DocumentArchiveCodec.sha256Hex(bytes)
+                }
+            } finally { tile.recycle() }
+        }
+        val suffix = listOfNotNull(if (lt > 0) "L$lt" else null, if (rt > 0) "R$rt" else null,
+            if (tt > 0) "T$tt" else null, if (bt > 0) "B$bt" else null).joinToString("+")
+        val layer = DocumentLayer(
             id = "outpaint_${UUID.randomUUID().toString().take(8)}",
-            name = "Outpaint Study ($labelSuffix)",
+            name = "Outpaint Study ($suffix)",
             visible = true,
             opacity = 1f,
             tiles = tiles,
-            tileHashes = tiles.mapValues { (_, b) -> DocumentArchiveCodec.sha256Hex(b) }
+            tileHashes = hashes
         )
-        return workDoc.copy(layers = workDoc.layers + newLayer, activeLayerId = newLayer.id)
+        return workDoc.copy(layers = workDoc.layers + layer, activeLayerId = layer.id)
     }
 
     fun buildOutpaintContextPreview(
@@ -501,36 +518,23 @@ object FuturesAndConstraintsEngine {
         val bmp = Bitmap.createBitmap(pw, ph, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bmp)
         canvas.drawColor(Color.rgb(16, 24, 34))
-
         val scale = min((pw - 24f) / max(1, targetW), (ph - 24f) / max(1, targetH))
-        val targetRect = RectF(
-            (pw - targetW * scale) / 2f,
-            (ph - targetH * scale) / 2f,
-            (pw + targetW * scale) / 2f,
-            (ph + targetH * scale) / 2f
-        )
-        canvas.drawRect(targetRect, Paint().apply {
-            color = Color.argb(120, 56, 189, 248)
-            style = Paint.Style.FILL
-        })
+        val targetRect = RectF((pw - targetW * scale) / 2f, (ph - targetH * scale) / 2f,
+            (pw + targetW * scale) / 2f, (ph + targetH * scale) / 2f)
+        canvas.drawRect(targetRect, Paint().apply { color = Color.argb(120, 56, 189, 248) })
         val oldLeft = targetRect.left + leftTiles * ts * scale
         val oldTop = targetRect.top + topTiles * ts * scale
         val oldRect = RectF(oldLeft, oldTop, oldLeft + doc.bounds.width * scale, oldTop + doc.bounds.height * scale)
-
-        val art = renderer.renderFlattenedRegion(doc, RectF(doc.bounds.minX, doc.bounds.minY, doc.bounds.maxX, doc.bounds.maxY), includePaper = true, includeVectors = true)
-        canvas.drawBitmap(art, null, oldRect, Paint(Paint.FILTER_BITMAP_FLAG))
-        art.recycle()
-        canvas.drawRect(oldRect, Paint().apply {
-            color = Color.WHITE
-            style = Paint.Style.STROKE
-            strokeWidth = 2f
-        })
-
+        val sourceRect = RectF(doc.bounds.minX, doc.bounds.minY, doc.bounds.maxX, doc.bounds.maxY)
+        val art = renderer.renderBoundedPreview(doc, sourceRect, maxSide = 320, includePaper = true, includeVectors = true)
+        try { canvas.drawBitmap(art, null, oldRect, Paint(Paint.FILTER_BITMAP_FLAG)) }
+        finally { art.recycle() }
+        canvas.drawRect(oldRect, Paint().apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 2f })
         return OutpaintPreviewInfo(
             previewBitmap = bmp,
             currentSizeLabel = "${doc.bounds.width}x${doc.bounds.height}",
             targetSizeLabel = "${targetW}x${targetH}",
-            disclaimer = "DETERMINISTIC LOCAL EDGE STUDY · Remote AI disabled in APK"
+            disclaimer = "DETERMINISTIC LOCAL EDGE STUDY - Remote AI disabled in APK"
         )
     }
 
@@ -546,92 +550,84 @@ object FuturesAndConstraintsEngine {
         candidateLayerId: String,
         selectionMask: SelectionMaskRecord?
     ): ForensicsReport {
-        val baseLayer = doc.layers.find { it.id == baseLayerId } ?: doc.layers.first()
-        val cmpLayer = doc.layers.find { it.id == candidateLayerId } ?: doc.layers.last()
-
-        val bmpA = renderer.materializeLayerBitmap(doc, baseLayer)
-        val bmpB = renderer.materializeLayerBitmap(doc, cmpLayer)
-        val w = doc.bounds.width
-        val h = doc.bounds.height
-
-        val pxA = IntArray(w * h)
-        val pxB = IntArray(w * h)
-        bmpA.getPixels(pxA, 0, w, 0, 0, w, h)
-        bmpB.getPixels(pxB, 0, w, 0, 0, w, h)
-
-        val maskBmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        val mc = Canvas(maskBmp)
-        if (selectionMask != null && selectionMask.points.size >= 3) {
-            val path = TileBrushEngine.buildMaskPath(doc.bounds, selectionMask)
-            if (path != null) {
-                mc.drawPath(path, Paint().apply { color = Color.WHITE; style = Paint.Style.FILL })
-            }
-        } else {
-            mc.drawColor(Color.WHITE)
-        }
-        val maskPx = IntArray(w * h)
-        maskBmp.getPixels(maskPx, 0, w, 0, 0, w, h)
-        maskBmp.recycle()
-
-        val heatPx = IntArray(w * h)
-        var changedIn = 0
-        var changedOut = 0
+        val base = doc.layers.find { it.id == baseLayerId } ?: doc.layers.first()
+        val candidate = doc.layers.find { it.id == candidateLayerId } ?: doc.layers.last()
+        val width = doc.bounds.width
+        val height = doc.bounds.height
+        val previewScale = min(1f, 640f / max(width, height))
+        val thumbW = max(1, (width * previewScale).roundToInt())
+        val thumbH = max(1, (height * previewScale).roundToInt())
+        val preview = Bitmap.createBitmap(thumbW, thumbH, Bitmap.Config.ARGB_8888)
+        val previewCanvas = Canvas(preview)
+        val selectionPath = selectionMask?.let { TileBrushEngine.buildMaskPath(doc.bounds, it) }
+        var changedInside = 0
+        var changedOutside = 0
         var maxDelta = 0
-        var sumDelta = 0L
-
-        for (i in pxA.indices) {
-            val c1 = pxA[i]
-            val c2 = pxB[i]
-            val da = abs(((c1 ushr 24) and 0xFF) - ((c2 ushr 24) and 0xFF))
-            val dr = abs(((c1 ushr 16) and 0xFF) - ((c2 ushr 16) and 0xFF))
-            val dg = abs(((c1 ushr 8) and 0xFF) - ((c2 ushr 8) and 0xFF))
-            val db = abs((c1 and 0xFF) - (c2 and 0xFF))
-            val dMax = max(max(da, dr), max(dg, db))
-            if (dMax > maxDelta) maxDelta = dMax
-            sumDelta += (da + dr + dg + db)
-
-            val insideMask = ((maskPx[i] ushr 24) and 0xFF) > 0
-            if (dMax > 2) {
-                if (insideMask) changedIn++ else changedOut++
-                val intensity = min(255, dMax * 2)
-                heatPx[i] = if (insideMask) {
-                    Color.argb(220, intensity, 180, 40) // Gold/amber inside mask
-                } else {
-                    Color.argb(245, 255, 40, 120) // Bright magenta alarm outside mask
-                }
-            } else {
-                heatPx[i] = Color.argb(90, 20, 40, 56) // Calm slate for identical pixels
+        var totalDelta = 0L
+        val step = 256
+        for (y in 0 until height step step) for (x in 0 until width step step) {
+            val w = min(step, width - x)
+            val h = min(step, height - y)
+            val rect = RectF(doc.bounds.minX + x, doc.bounds.minY + y,
+                doc.bounds.minX + x + w, doc.bounds.minY + y + h)
+            val bmpA = renderer.renderSingleLayerRegion(doc, base, rect)
+            val bmpB = renderer.renderSingleLayerRegion(doc, candidate, rect)
+            val pxA = IntArray(w * h)
+            val pxB = IntArray(w * h)
+            bmpA.getPixels(pxA, 0, w, 0, 0, w, h)
+            bmpB.getPixels(pxB, 0, w, 0, 0, w, h)
+            bmpA.recycle()
+            bmpB.recycle()
+            val mask = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+            val maskCanvas = Canvas(mask)
+            if (selectionPath == null) maskCanvas.drawColor(Color.WHITE) else {
+                maskCanvas.translate(-x.toFloat(), -y.toFloat())
+                maskCanvas.drawPath(selectionPath, Paint().apply { color = Color.WHITE; style = Paint.Style.FILL })
             }
+            val maskPx = IntArray(w * h)
+            mask.getPixels(maskPx, 0, w, 0, 0, w, h)
+            mask.recycle()
+            val heatPx = IntArray(w * h)
+            for (i in pxA.indices) {
+                val a = pxA[i]
+                val b = pxB[i]
+                val da = abs(((a ushr 24) and 255) - ((b ushr 24) and 255))
+                val dr = abs(((a ushr 16) and 255) - ((b ushr 16) and 255))
+                val dg = abs(((a ushr 8) and 255) - ((b ushr 8) and 255))
+                val db = abs((a and 255) - (b and 255))
+                val dMax = max(max(da, dr), max(dg, db))
+                maxDelta = max(maxDelta, dMax)
+                totalDelta += da + dr + dg + db
+                val inside = ((maskPx[i] ushr 24) and 255) > 0
+                if (dMax > 2) {
+                    if (inside) changedInside++ else changedOutside++
+                    val intensity = min(255, dMax * 2)
+                    heatPx[i] = if (inside) Color.argb(220, intensity, 180, 40)
+                        else Color.argb(245, 255, 40, 120)
+                } else heatPx[i] = Color.argb(90, 20, 40, 56)
+            }
+            val heatTile = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+            try {
+                heatTile.setPixels(heatPx, 0, w, 0, 0, w, h)
+                previewCanvas.drawBitmap(heatTile, null,
+                    RectF(x * previewScale, y * previewScale,
+                        (x + w) * previewScale, (y + h) * previewScale),
+                    Paint(Paint.FILTER_BITMAP_FLAG))
+            } finally { heatTile.recycle() }
         }
-
-        val rawHeat = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).apply {
-            setPixels(heatPx, 0, w, 0, 0, w, h)
-        }
-        val thumbScale = min(1f, 640f / max(w, h))
-        val previewHeat = Bitmap.createScaledBitmap(
-            rawHeat,
-            max(1, (w * thumbScale).roundToInt()),
-            max(1, (h * thumbScale).roundToInt()),
-            true
-        )
-        rawHeat.recycle()
-        bmpA.recycle()
-        bmpB.recycle()
-
-        val meanDelta = sumDelta.toDouble() / (pxA.size.toDouble() * 4.0)
         return ForensicsReport(
-            baseLabel = baseLayer.name,
-            compareLabel = cmpLayer.name,
-            heatmapBitmap = previewHeat,
-            totalPixelsCompared = pxA.size,
-            changedPixelsInsideMask = changedIn,
-            changedPixelsOutsideMask = changedOut,
+            baseLabel = base.name,
+            compareLabel = candidate.name,
+            heatmapBitmap = preview,
+            totalPixelsCompared = width * height,
+            changedPixelsInsideMask = changedInside,
+            changedPixelsOutsideMask = changedOutside,
             maxChannelDelta = maxDelta,
-            meanAbsoluteDelta = meanDelta,
-            maskBoundarySafe = changedOut == 0,
+            meanAbsoluteDelta = totalDelta.toDouble() / (width.toDouble() * height.toDouble() * 4.0),
+            maskBoundarySafe = changedOutside == 0,
             advisoryChecklist = listOf(
-                if (changedOut == 0) "PASS: Zero pixels changed outside active selection mask."
-                else "ALERT: $changedOut pixel(s) differ outside active selection mask.",
+                if (changedOutside == 0) "PASS: Zero pixels changed outside active selection mask."
+                else "ALERT: $changedOutside pixel(s) differ outside active selection mask.",
                 "Inspect anatomy/silhouette continuity at mask seam manually.",
                 "Verify specular highlight direction matches canvas light source.",
                 "Confirm layer naming & source provenance badge accuracy."
@@ -650,29 +646,31 @@ object FuturesAndConstraintsEngine {
         mask: SelectionMaskRecord
     ): Int {
         val layer = doc.layers.find { it.id == targetLayerId } ?: return 0
-        val bmp = renderer.materializeLayerBitmap(doc, layer)
-        val w = bmp.width
-        val h = bmp.height
-        val px = IntArray(w * h)
-        bmp.getPixels(px, 0, w, 0, 0, w, h)
-        bmp.recycle()
-
-        val maskBmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        val mc = Canvas(maskBmp)
-        TileBrushEngine.buildMaskPath(doc.bounds, mask)?.let { p ->
-            mc.drawPath(p, Paint().apply { color = Color.WHITE; style = Paint.Style.FILL })
+        val path = TileBrushEngine.buildMaskPath(doc.bounds, mask) ?: return Int.MAX_VALUE
+        val width = doc.bounds.width
+        val height = doc.bounds.height
+        var count = 0
+        for (y in 0 until height step 256) for (x in 0 until width step 256) {
+            val w = min(256, width - x)
+            val h = min(256, height - y)
+            val rect = RectF(doc.bounds.minX + x, doc.bounds.minY + y,
+                doc.bounds.minX + x + w, doc.bounds.minY + y + h)
+            val bitmap = renderer.renderSingleLayerRegion(doc, layer, rect)
+            val pixels = IntArray(w * h)
+            bitmap.getPixels(pixels, 0, w, 0, 0, w, h)
+            bitmap.recycle()
+            val maskBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(maskBitmap)
+            canvas.translate(-x.toFloat(), -y.toFloat())
+            canvas.drawPath(path, Paint().apply { color = Color.WHITE; style = Paint.Style.FILL })
+            val maskPixels = IntArray(w * h)
+            maskBitmap.getPixels(maskPixels, 0, w, 0, 0, w, h)
+            maskBitmap.recycle()
+            for (i in pixels.indices) {
+                if ((pixels[i] ushr 24) > 0 && (maskPixels[i] ushr 24) == 0) count++
+            }
         }
-        val mPx = IntArray(w * h)
-        maskBmp.getPixels(mPx, 0, w, 0, 0, w, h)
-        maskBmp.recycle()
-
-        var outsideCount = 0
-        for (i in px.indices) {
-            val alpha = (px[i] ushr 24) and 0xFF
-            val inMask = ((mPx[i] ushr 24) and 0xFF) > 0
-            if (alpha > 0 && !inMask) outsideCount++
-        }
-        return outsideCount
+        return count
     }
 
     fun composeMaskedPreview(

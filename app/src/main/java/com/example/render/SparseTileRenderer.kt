@@ -361,6 +361,49 @@ class SparseTileRenderer(
         return out
     }
 
+    /** Render one layer in a bounded world rectangle without materializing the document. */
+    fun renderSingleLayerRegion(
+        doc: CanonicalDocument,
+        layer: DocumentLayer,
+        region: RectF
+    ): Bitmap {
+        val w = max(1, region.width().roundToInt())
+        val h = max(1, region.height().roundToInt())
+        require(w.toLong() * h.toLong() <= 256L * 256L) {
+            "Single-layer region must fit in one 256x256 analysis tile."
+        }
+        val result = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(result)
+        canvas.translate(-region.left, -region.top)
+        drawLayerTiles(canvas, doc.bounds, doc.tileSize, layer, region, Paint(Paint.FILTER_BITMAP_FLAG))
+        return result
+    }
+
+    /** Scale during drawing; never allocate a full-size intermediary for previews. */
+    fun renderBoundedPreview(
+        doc: CanonicalDocument,
+        region: RectF,
+        maxSide: Int = 1280,
+        includePaper: Boolean = true,
+        includeVectors: Boolean = true
+    ): Bitmap {
+        require(maxSide in 1..2048)
+        val factor = min(1f, maxSide.toFloat() / max(region.width(), region.height()).coerceAtLeast(1f))
+        val w = max(1, (region.width() * factor).roundToInt())
+        val h = max(1, (region.height() * factor).roundToInt())
+        val output = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(output)
+        if (includePaper) {
+            val paper = PaperStyle.fromId(doc.paperColorHex)
+            canvas.drawColor(if (paper == PaperStyle.TRANSPARENT) Color.WHITE else paper.colorInt)
+        }
+        canvas.scale(w.toFloat() / region.width(), h.toFloat() / region.height())
+        canvas.translate(-region.left, -region.top)
+        val tilePaint = Paint(Paint.FILTER_BITMAP_FLAG)
+        doc.layers.forEach { if (it.visible) drawLayerTiles(canvas, doc.bounds, doc.tileSize, it, region, tilePaint) }
+        if (includeVectors) doc.vectorObjects.forEach { if (it.visible) drawVectorObject(canvas, it) }
+        return output
+    }
     fun computeArtworkBoundingBox(doc: CanonicalDocument, padding: Int = 40): RectF? {
         var minWx = Float.POSITIVE_INFINITY
         var minWy = Float.POSITIVE_INFINITY
