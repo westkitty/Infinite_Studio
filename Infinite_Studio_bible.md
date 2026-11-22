@@ -29,3 +29,12 @@
 3. Run D01-D09 on physical Samsung Tab S9 Ultra.
 4. Finish character-passport UI import/export and evaluate remaining dense Foundry export paths.
 5. Only then consider a release candidate; debug APK is not a signed production release.
+
+## 2026-11-22 - C01-C05 implementation commit and validation evidence
+
+- Implementation commit: 6e0f4158fed76ee9c8a1b7fe7bdcd723df11c425.
+- Changed scope: exactly 25 intended source, historical-reference, schema, test, and build/QA script files; generated Python bytecode was excluded.
+- The historical original browser source SHA-256 matched 0e1497037505c011d7837874f5a277c5b65cc030161e36fc33102218f9970b76. Historical whitespace was retained to preserve source bytes.
+- Local Big Mac validation: six Python companion tests passed; shell syntax checks passed; staged diff check passed excluding unmodified historical whitespace.
+- Kotlin compilation, Android Gradle tests, APK build, S-Pen hardware checks, paid provider execution and end-to-end creative workflows remain UNVERIFIED. These are not a release claim.
+- Git remote verification and push outcome must be checked independently against GitHub after this documentation follow-up.
